@@ -1,0 +1,81 @@
+.card-text {
+  color: #999999;
+  margin-bottom: 7.5px;
+  display: block;
+}
+
+.card-title {
+  font-weight: bold;
+  font-size: 36px;
+  margin-top: 0;
+  margin-bottom: 7.5px;
+}
+
+/* restyle radio items */
+.radio-group .form-check {
+  padding-left: 0;
+}
+
+.radio-group .btn-group > .form-check:not(:last-child) > .btn {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.radio-group .btn-group > .form-check:not(:first-child) > .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: -1px;
+}
+
+.custom-tabs-container {
+    width: 100%;
+}
+.custom-tabs {
+    border-top-left-radius: 3px;
+    background-color: #161A27; /* это цвет содержимого */
+    padding: 0px 24px;
+    border-bottom: 1px solid #d6d6d6;
+}
+
+.custom-tab {
+    color: white; /* это цвет текста */
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-top: 3px solid transparent !important;
+    border-left: 0px !important;
+    border-right: 0px !important;
+    border-bottom: 0px !important;
+    background-color: #19202A !important;
+    padding: 12px !important;
+    font-family: "system-ui";
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    margin: 5px;
+}
+.custom-tab--selected {
+    color: white !important;
+
+
+    border-bottom: 4px solid #91DFD3 !important;
+    background-color: #19202A !important;
+}
+.custom_container{
+    background-color: #1D2030;
+}
+
+.hr {
+    border: none; /* Убираем границу для браузера Firefox */
+    color: gray; /* Цвет линии для остальных браузеров */
+    background-color: gray; /* Цвет линии для браузера Firefox и Opera */
+    height: 2px; /* Толщина линии */
+   }
+
+/* Links
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+a {
+  color: #1EAEDB;
+  text-decoration: underline;
+  cursor: pointer;}
+a:hover {
+  color: #0FA0CE; }
