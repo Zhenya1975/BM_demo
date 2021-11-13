@@ -7,7 +7,8 @@ import functions_file
 import plotly.graph_objects as go
 import tab_calendar_actions
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+#app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__)
 app.title = " BM Demo dashboard"
 server = app.server
 
@@ -34,7 +35,7 @@ body = html.Div([
             ),
         ])
     ],
-        fluid=True, className='custom_container')
+        fluid=True, className='dash-bootstrap')
 
 ])
 app.layout = html.Div([body])
@@ -81,13 +82,15 @@ def events_distribution(selected_regions, start_date, end_date, include_zeros_ch
         barmode='group',
         template= 'plotly_dark',
         title = "Встречи по областям, кол-во",
+
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
-            x=1
-        )
+            x=1,
+        ),
+        #legend_title_text='Встречи по областям, кол-во'
 
         #legend_orientation="h"
     )

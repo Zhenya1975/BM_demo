@@ -21,10 +21,21 @@ def calendar_actions():
                                             'marginTop': '10px', 'color': 'white'},
                                      children=[
                                          html.P(),
-                                         html.B('Регионы'),
+
+                                         # html.B('Регионы'),
                                          html.P(),
                                          html.Div(style={'marginLeft': '3px'},
                                                   children=[
+                                                      dcc.Dropdown(id='regionselector',
+                                                                   options=regions,
+                                                                   multi=True,
+                                                                   #value=,
+                                                                   #style={'backgroundColor': '#181922', 'color':'black'},
+                                                                   #className='stockselector',
+                                                                   placeholder='Регион...',
+                                                                   #className = "dash-bootstrap"
+                                                                   ),
+                                                      html.P(),
                                                       dbc.Button("Выбрать все", size="sm",
                                                                  id="select_all_regions_button_tab_calendar_actions",
                                                                  style={'marginBottom': '3px',
@@ -51,7 +62,8 @@ def calendar_actions():
                         children=[
                             html.P(),
                             html.Div(style={'paddingLeft': '30px', 'paddingRight': '20px',
-                                            'paddingTop': '10px', 'color': 'white'},
+                                            #'paddingTop': '10px',
+                                            'color': 'white'},
                                      children=[
 
                                          dbc.Row([
@@ -60,10 +72,11 @@ def calendar_actions():
                                              #dbc.Col(dbc.Card(card_tab_deals_lost_deals, color="dark", inverse=True)),
                                          ],
                                          ),
-                                         html.P(className="card-text", id='card_deals_today_date'),
+
                                          html.Div([
                                              dcc.DatePickerRange(
                                                  id='my-date-picker-range',
+                                                 first_day_of_week =1,
                                                  #min_date_allowed=date(1995, 8, 5),
                                                  max_date_allowed=datetime.datetime.now().date(),
                                                  initial_visible_month=datetime.datetime.now().date(),
@@ -73,7 +86,7 @@ def calendar_actions():
                                                  display_format = 'D.M.YYYY',
 
                                              ),
-                                             html.Div(id='output-container-date-picker-range')
+
                                          ]),
                                          html.P(),
                                          dbc.Row([
