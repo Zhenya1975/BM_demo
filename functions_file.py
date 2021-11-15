@@ -3,6 +3,9 @@ from dash import callback_context
 import datetime
 import initial_values
 
+# получаем список регионов
+regions_list = pd.DataFrame(initial_values.region_checklist_data()[1], columns=['Oblast'])
+
 def selectall_relese_all_buttons(id_select_all_button, id_release_all_button, options):
     """Обработчик Выбрать все / Снять выбор"""
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
@@ -28,54 +31,109 @@ def get_event_df():
     for date_column in date_column_list:
         events_df.loc[:, date_column] = pd.to_datetime(events_df[date_column], infer_datetime_format=True)
         events_df[date_column] = events_df[date_column].apply(lambda x: datetime.date(x.year, x.month, x.day))
+
     return events_df
 
-# в одной колонке - категория, в другой - количество встреч
-# считаем количество запланированных встреч в дату.
-def events_grapf_prep(planned_df, closed_df, include_zeros_checkbox_value):
-    # planned_df_groupped - группируем по дате Plan_date и считаем сколько строк попало в выборку
-    planned_df_groupped = planned_df.groupby('Plan_date').size().to_frame('size').reset_index()
-    planned_qty = planned_df_groupped.loc[:, 'size'].sum()
-    result_list_for_df = []
-    planned_record = {'category': 'Запланировано', 'value': planned_qty}
-    result_list_for_df.append(planned_record)
-    closed_df_groupped = closed_df.groupby('Close_date').size().to_frame('size').reset_index()
-    closed_qty = closed_df_groupped.loc[:, 'size'].sum()
-    closed_record = {'category': 'Завершено', 'value': closed_qty}
-    result_list_for_df.append(closed_record)
-    df_graph = pd.DataFrame(result_list_for_df)
-
+def planned_graph_prep(planned_df, include_zeros_checkbox_value):
     # создаем выборку для построения графика по регионам
     planned_df_groupped_by_regions = planned_df.groupby(['Plan_date', 'Oblast']).size().to_frame('size').reset_index()
     # получаем список регионов и количество запланированных встреч
-    planned_df_groupped_by_regions_sum = planned_df_groupped_by_regions.groupby(['Oblast'], as_index=False)['size'].sum().sort_values(by='size', ascending=False, ignore_index = True)
-    closed_df_groupped_by_regions = closed_df.groupby(['Close_date', 'Oblast']).size().to_frame('size').reset_index()
-    closed_df_groupped_by_regions_sum = closed_df_groupped_by_regions.groupby(['Oblast'], as_index=False)[
-        'size'].sum().sort_values(by='size', ascending=False, ignore_index=True)
-    # получаем список регионов
-    regions_list = pd.DataFrame(initial_values.region_checklist_data()[1], columns=['Oblast'])
+    planned_df_groupped_by_regions_sum = planned_df_groupped_by_regions.groupby(['Oblast'], as_index=False)[
+        'size'].sum()
 
-    oblast_dist_graph_data_prep_df = pd.merge(regions_list, planned_df_groupped_by_regions_sum, on='Oblast', how='left')
-    oblast_dist_graph_data_prep_df.rename(columns = {'size': 'Planned_qty'}, inplace = True)
-    oblast_dist_graph_data_prep_df = pd.merge(oblast_dist_graph_data_prep_df, closed_df_groupped_by_regions_sum, on='Oblast', how='left')
-    oblast_dist_graph_data_prep_df.rename(columns={'size': 'Closed_qty'}, inplace=True)
-    oblast_dist_graph_data_prep_df.fillna(0, inplace=True)
+    # planned_oblast_dist_graph_data_prep_df - это список - области  - запланированные встречи
+    planned_oblast_dist_graph_data_prep_df = pd.merge(regions_list, planned_df_groupped_by_regions_sum, on='Oblast',
+                                                      how='left')
+    planned_oblast_dist_graph_data_prep_df.rename(columns={'size': 'Planned_qty'}, inplace=True)
+    planned_oblast_dist_graph_data_prep_df.fillna(0, inplace=True)
+    planned_oblast_dist_graph_data_prep_df.sort_values(['Planned_qty'], inplace=True)
 
-    # проверяем. Если в чек-боксе "Показать регионы с нулями" есть выбранное значение, то отдаем датафрейм с нулями.
-    # Если чек-бокс пустой, то отдаем датафрем без нулей
-
-    #if include_zeros_checkbox_value:
-
-    oblast_dist_graph_data_df = oblast_dist_graph_data_prep_df.sort_values(by='Closed_qty', ascending=False, ignore_index = True)
-    oblast_dist_graph_data_df_without_zeros_in_closed_events = oblast_dist_graph_data_df.loc[oblast_dist_graph_data_df['Closed_qty']>0]
     if include_zeros_checkbox_value:
-        oblast_dist_graph_data__result_df = oblast_dist_graph_data_df
+        oblast_dist_prep_graph_data_df = planned_oblast_dist_graph_data_prep_df
+
     else:
-        oblast_dist_graph_data__result_df = oblast_dist_graph_data_df_without_zeros_in_closed_events
+        oblast_dist_prep_graph_data_df = planned_oblast_dist_graph_data_prep_df.loc[planned_oblast_dist_graph_data_prep_df['Planned_qty']>0]
 
-    return df_graph, oblast_dist_graph_data__result_df
+    return oblast_dist_prep_graph_data_df
+
+def closed_graph_prep(closed_df, include_zeros_checkbox_value):
+    # готовим данные для завершенных ивентов
+    closed_df_groupped_by_regions = closed_df.groupby(['Close_date', 'Oblast']).size().to_frame('size').reset_index()
+    closed_df_groupped_by_regions_sum = closed_df_groupped_by_regions.groupby(['Oblast'], as_index=False)['size'].sum()
+    closed_oblast_dist_graph_data_prep_df = pd.merge(regions_list, closed_df_groupped_by_regions_sum, on='Oblast',
+                                                     how='left')
+    closed_oblast_dist_graph_data_prep_df.rename(columns={'size': 'Closed_qty'}, inplace=True)
+    closed_oblast_dist_graph_data_prep_df.fillna(0, inplace=True)
+    closed_oblast_dist_graph_data_prep_df.sort_values(['Closed_qty'], inplace=True)
+
+    if include_zeros_checkbox_value:
+        oblast_dist_closed_graph_data_df = closed_oblast_dist_graph_data_prep_df
+
+    else:
+        oblast_dist_closed_graph_data_df = closed_oblast_dist_graph_data_prep_df.loc[
+            closed_oblast_dist_graph_data_prep_df['Closed_qty'] > 0]
+
+    return oblast_dist_closed_graph_data_df
 
 
+
+
+# в одной колонке - категория, в другой - количество встреч
+# считаем количество запланированных встреч в дату.
+#def events_grapf_prep(planned_df, closed_df, include_zeros_checkbox_value):
+# def events_grapf_prep(planned_df, closed_df):
+#     # planned_df_groupped - группируем по дате Plan_date и считаем сколько строк попало в выборку, начиная с сегодняшнего дня и в будущее
+#     #planned_df_groupped = planned_df.groupby('Plan_date').size().to_frame('size').reset_index()
+#     #planned_qty = planned_df_groupped.loc[:, 'size'].sum()
+#     #result_list_for_df = []
+#     #planned_record = {'category': 'Запланировано', 'value': planned_qty}
+#     #result_list_for_df.append(planned_record)
+#     #closed_df_groupped = closed_df.groupby('Close_date').size().to_frame('size').reset_index()
+#     #closed_qty = closed_df_groupped.loc[:, 'size'].sum()
+#     #closed_record = {'category': 'Завершено', 'value': closed_qty}
+#     #result_list_for_df.append(closed_record)
+#     #df_graph = pd.DataFrame(result_list_for_df)
+#
+#     # создаем выборку для построения графика по регионам
+#     planned_df_groupped_by_regions = planned_df.groupby(['Plan_date', 'Oblast']).size().to_frame('size').reset_index()
+#     # получаем список регионов и количество запланированных встреч
+#     planned_df_groupped_by_regions_sum = planned_df_groupped_by_regions.groupby(['Oblast'], as_index=False)['size'].sum()
+#
+#     # получаем список регионов
+#     regions_list = pd.DataFrame(initial_values.region_checklist_data()[1], columns=['Oblast'])
+#
+#     # planned_oblast_dist_graph_data_prep_df - это список - области  - запланированные встречи
+#     planned_oblast_dist_graph_data_prep_df = pd.merge(regions_list, planned_df_groupped_by_regions_sum, on='Oblast', how='left')
+#     planned_oblast_dist_graph_data_prep_df.rename(columns = {'size': 'Planned_qty'}, inplace = True)
+#     planned_oblast_dist_graph_data_prep_df.fillna(0, inplace=True)
+#     planned_oblast_dist_graph_data_prep_df.sort_values(['Planned_qty'], inplace = True)
+#
+#     # готовим данные для завершенных ивентов
+#     closed_df_groupped_by_regions = closed_df.groupby(['Close_date', 'Oblast']).size().to_frame('size').reset_index()
+#     closed_df_groupped_by_regions_sum = closed_df_groupped_by_regions.groupby(['Oblast'], as_index=False)['size'].sum()
+#     closed_oblast_dist_graph_data_prep_df = pd.merge(regions_list, closed_df_groupped_by_regions_sum, on='Oblast', how='left')
+#     closed_oblast_dist_graph_data_prep_df.rename(columns={'size': 'Closed_qty'}, inplace=True)
+#     closed_oblast_dist_graph_data_prep_df.fillna(0, inplace=True)
+#     closed_oblast_dist_graph_data_prep_df.sort_values(['Closed_qty'], inplace=True)
+#
+#
+#     #oblast_dist_graph_data_prep_df = pd.merge(oblast_dist_graph_data_prep_df, closed_df_groupped_by_regions_sum, on='Oblast', how='left')
+#     #oblast_dist_graph_data_prep_df.rename(columns={'size': 'Closed_qty'}, inplace=True)
+#     #oblast_dist_graph_data_prep_df.fillna(0, inplace=True)
+#
+#     # проверяем. Если в чек-боксе "Показать регионы с нулями" есть выбранное значение, то отдаем датафрейм с нулями.
+#     # Если чек-бокс пустой, то отдаем датафрем без нулей
+#
+#     #if include_zeros_checkbox_value:
+#
+#     #oblast_dist_graph_data_df = oblast_dist_graph_data_prep_df.sort_values(by='Closed_qty', ascending=False, ignore_index = True)
+#     #oblast_dist_graph_data_df_without_zeros_in_closed_events = oblast_dist_graph_data_df.loc[oblast_dist_graph_data_df['Closed_qty']>0]
+#     # if include_zeros_checkbox_value:
+#     #     oblast_dist_graph_data__result_df = oblast_dist_graph_data_df
+#     # else:
+#     #     oblast_dist_graph_data__result_df = oblast_dist_graph_data_df_without_zeros_in_closed_events
+#
+#     return closed_oblast_dist_graph_data_prep_df, planned_oblast_dist_graph_data_prep_df
 
 
 

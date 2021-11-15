@@ -54,61 +54,63 @@ def button_productgroup_callback_func(select_all_regions_button_tab_calendar_act
 
 # получаем датафрейм со встречами
 event_df = functions_file.get_event_df()
-@app.callback([Output('meetings_day_distribution_graph', 'figure'),
-               Output('meetings_distribution_by_oblast_graph', 'figure'),
-               ],
-              [Input('region_selector_checklist_calendar_actions_tab', 'value'),
-               Input('my-date-picker-range', 'start_date'),
-               Input('my-date-picker-range', 'end_date'),
-               Input('include_zeros_regions', 'value'),
-               ])
-def events_distribution(selected_regions, start_date, end_date, include_zeros_checkbox_value):
+@app.callback([
+    #Output('meetings_day_distribution_graph', 'figure'),
+    Output('closed_meetings_day_distribution_graph', 'figure'),
+    Output('open_meetings_day_distribution_graph', 'figure'),
+   ],
+
+    [
+        #Input('region_selector_checklist_calendar_actions_tab', 'value'),
+        Input('my-date-picker-range', 'start_date'),
+        Input('my-date-picker-range', 'end_date'),
+        Input('include_zeros_regions', 'value'),
+   ])
+def events_distribution(start_date, end_date,
+                        include_zeros_checkbox_value
+                        ):
+
     start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
     end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d").date()
-    plan_date_selected_df = functions_file.cut_df_by_dates_interval(event_df, 'Plan_date', start_date, end_date)
-    close_date_selected_df = functions_file.cut_df_by_dates_interval(event_df, 'Close_date', start_date, end_date)
-    graph_data = functions_file.events_grapf_prep(plan_date_selected_df , close_date_selected_df, include_zeros_checkbox_value)[0]
-    oblast_dist_data = functions_file.events_grapf_prep(plan_date_selected_df , close_date_selected_df, include_zeros_checkbox_value)[1]
-    x_oblast_dist = oblast_dist_data['Oblast']
-    y_planned = oblast_dist_data['Planned_qty']
-    y_closed = oblast_dist_data['Closed_qty']
+    # plan_date_selected_df - это event_df обрезанный по датам от сегодня в будущее
+    plan_date_start = datetime.datetime.now().date()
+    close_date_finish = datetime.datetime.now().date()
 
-    fig_dist_oblast = go.Figure()
-    fig_dist_oblast.add_trace(go.Bar(name='Запланировано', x=x_oblast_dist, y=y_planned))
-    fig_dist_oblast.add_trace(go.Bar(name='Завершено', x=x_oblast_dist, y=y_closed))
+    plan_date_selected_df = functions_file.cut_df_by_dates_interval(event_df, 'Plan_date', plan_date_start, end_date)
+    planned_graph_data = functions_file.planned_graph_prep(plan_date_selected_df, include_zeros_checkbox_value)
+    #  общее количество Запланировано. Для вывода в заголовок графика
+    planned_total_qty = int(planned_graph_data['Planned_qty'].sum())
 
-    # Change the bar mode
-    fig_dist_oblast.update_layout(
-        barmode='group',
-        template= 'plotly_dark',
-        title = "Встречи по областям, кол-во",
+    planned_graph_fig = go.Figure()
+    planned_graph_fig.add_trace(go.Bar(
+            x=planned_graph_data['Planned_qty'],
+            y=planned_graph_data['Oblast'],
 
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-        ),
-        #legend_title_text='Встречи по областям, кол-во'
-
-        #legend_orientation="h"
+            orientation='h'))
+    start_open = plan_date_start.strftime("%d.%m.%y")
+    end_open = end_date.strftime("%d.%m.%y")
+    planned_graph_fig.update_layout(
+        template ='plotly_dark', title='Завершено: {}<br><sup>c {} по {}</sup> '.format(planned_total_qty, start_open, end_open),
     )
-    #figure = go.Figure()
-    x = graph_data['value']
-    y = graph_data['category']
-    #print(x, type(x))
-    #print(y, type(y))
 
-    trace = go.Funnel(
-        y=y,
-        x=x,
-        textposition="inside",
-        textinfo="value",
+    # close_date_selected_df - это event_df обрезанный по датам завершения из прошлого до сегодня.
+    close_date_selected_df = functions_file.cut_df_by_dates_interval(event_df, 'Close_date', start_date, close_date_finish)
+
+    closed_graph_data = functions_file.closed_graph_prep(close_date_selected_df, include_zeros_checkbox_value)
+    closed_total_qty = int(closed_graph_data['Closed_qty'].sum())
+    closed_graph_fig = go.Figure()
+    closed_graph_fig.add_trace(go.Bar(
+        x=closed_graph_data['Closed_qty'],
+        y=closed_graph_data['Oblast'],
+        orientation='h'))
+    start_close = start_date.strftime("%d.%m.%y")
+    end_close = close_date_finish.strftime("%d.%m.%y")
+    closed_graph_fig.update_layout(
+        template='plotly_dark', title='Завершено: {}<br><sup>c {} по {}</sup> '.format(closed_total_qty, start_close, end_close),
     )
-    layout = {'template': 'plotly_dark', 'title': {'text': 'Встречи, кол-во'},}
 
-    return go.Figure(data=trace, layout = layout), fig_dist_oblast
+
+    return closed_graph_fig, planned_graph_fig
 
 if __name__ == "__main__":
     app.run_server(debug=True)

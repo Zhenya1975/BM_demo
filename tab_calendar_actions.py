@@ -78,11 +78,12 @@ def calendar_actions():
                                                  id='my-date-picker-range',
                                                  first_day_of_week =1,
                                                  #min_date_allowed=date(1995, 8, 5),
-                                                 max_date_allowed=datetime.datetime.now().date(),
+                                                 #max_date_allowed=datetime.datetime.now().date(),
                                                  initial_visible_month=datetime.datetime.now().date(),
                                                  #start_date = datetime.datetime.now().date(),
                                                  start_date = datetime.datetime.strptime("01.11.2021", "%d.%m.%Y").date(),
-                                                 end_date=datetime.datetime.now().date(),
+                                                 #end_date=datetime.datetime.now().date(),
+                                                 end_date=datetime.datetime.strptime("31.12.2021", "%d.%m.%Y").date(),
                                                  display_format = 'D.M.YYYY',
 
                                              ),
@@ -92,27 +93,34 @@ def calendar_actions():
                                          dbc.Row([
                                              dbc.Col(width=6,
                                                      children=[
-
-                                                         dcc.Graph(id='meetings_day_distribution_graph', config={'displayModeBar': False}),
+                                                         #dcc.Graph(id='meetings_day_distribution_graph', config={'displayModeBar': False}),
+                                                         dcc.Graph(id='closed_meetings_day_distribution_graph',
+                                                                   config={'displayModeBar': False}),
                                                          html.P(),
+
                                                      ]
                                                      ),
                                              dbc.Col(width=6,
                                                      children=[
 
-                                                         dcc.Graph(id='meetings_distribution_by_oblast_graph',
+                                                         dcc.Graph(id='open_meetings_day_distribution_graph',
                                                                    config={'displayModeBar': False}),
                                                          html.P(),
-                                                         dcc.Checklist(
-                                                             id='include_zeros_regions',
-                                                             options=[{'label': " Показать регионы с нулями",
-                                                                       'value': "regions_zeros"}],
-                                                             # value='regions_zeros',
-                                                             # labelStyle=dict(display='block')
-                                                         ),
+
                                                          html.P(),
                                                      ]
                                                      ),
+                                         ]),
+                                         dbc.Row([
+                                             dbc.Col(
+                                                 dcc.Checklist(
+                                                     id='include_zeros_regions',
+                                                     options=[{'label': " Показать регионы с нулями",
+                                                               'value': "regions_zeros"}],
+                                                     # value='regions_zeros',
+                                                     # labelStyle=dict(display='block')
+                                                 ),
+                                             ),
                                          ]),
                                      ])
                             ]),
