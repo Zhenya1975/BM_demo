@@ -90,7 +90,7 @@ def events_distribution(start_date, end_date,
     start_open = plan_date_start.strftime("%d.%m.%y")
     end_open = end_date.strftime("%d.%m.%y")
     planned_graph_fig.update_layout(
-        template ='plotly_dark', title='Завершено: {}<br><sup>c {} по {}</sup> '.format(planned_total_qty, start_open, end_open),
+        template ='plotly_dark', title='Запланировано: {}<br><sup>c {} по {}</sup> '.format(planned_total_qty, start_open, end_open),
     )
 
     # close_date_selected_df - это event_df обрезанный по датам завершения из прошлого до сегодня.
