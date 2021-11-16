@@ -2,9 +2,11 @@ import pandas as pd
 from dash import callback_context
 import datetime
 import initial_values
-
-# получаем список регионов
-regions_list = pd.DataFrame(initial_values.region_checklist_data()[1], columns=['Oblast'])
+from dash import dcc, html, Input, Output, State
+import dash_bootstrap_components as dbc
+# получаем список регионов в виде кодов регионов
+regions_list = pd.DataFrame(initial_values.region_checklist_data()[1], columns=['region_code'])
+regions = initial_values.region_checklist_data()[0]
 
 def selectall_relese_all_buttons(id_select_all_button, id_release_all_button, options):
     """Обработчик Выбрать все / Снять выбор"""
@@ -29,52 +31,86 @@ def get_event_df():
     date_column_list = ['Create_date', 'Deadline_date', 'Close_date', 'Plan_date']
     # конвертируем даты в даты
     for date_column in date_column_list:
-        events_df.loc[:, date_column] = pd.to_datetime(events_df[date_column], infer_datetime_format=True)
+        events_df.loc[:, date_column] = pd.to_datetime(events_df[date_column], infer_datetime_format=True, format='%d.%m.%Y')
         events_df[date_column] = events_df[date_column].apply(lambda x: datetime.date(x.year, x.month, x.day))
-
+    #events_df.replace({"Event_status": initial_values.event_status()}, inplace=True)
+    #events_df.to_csv('Data/events_df_delete.csv')
     return events_df
-
+region_list_names = pd.read_csv('Data/regions.csv')
 def planned_graph_prep(planned_df, include_zeros_checkbox_value):
     # создаем выборку для построения графика по регионам
-    planned_df_groupped_by_regions = planned_df.groupby(['Plan_date', 'Oblast']).size().to_frame('size').reset_index()
+    planned_df_groupped_by_regions = planned_df.groupby(['Plan_date', 'region_code']).size().to_frame('size').reset_index()
     # получаем список регионов и количество запланированных встреч
-    planned_df_groupped_by_regions_sum = planned_df_groupped_by_regions.groupby(['Oblast'], as_index=False)[
+    planned_df_groupped_by_regions_sum = planned_df_groupped_by_regions.groupby(['region_code'], as_index=False)[
         'size'].sum()
 
     # planned_oblast_dist_graph_data_prep_df - это список - области  - запланированные встречи
-    planned_oblast_dist_graph_data_prep_df = pd.merge(regions_list, planned_df_groupped_by_regions_sum, on='Oblast',
+    planned_oblast_dist_graph_data_prep_df = pd.merge(regions_list, planned_df_groupped_by_regions_sum, on='region_code',
                                                       how='left')
     planned_oblast_dist_graph_data_prep_df.rename(columns={'size': 'Planned_qty'}, inplace=True)
     planned_oblast_dist_graph_data_prep_df.fillna(0, inplace=True)
     planned_oblast_dist_graph_data_prep_df.sort_values(['Planned_qty'], inplace=True)
 
+    planned_oblast_dist_graph_data_prep_df_with_region_names = pd.merge(planned_oblast_dist_graph_data_prep_df, region_list_names, on = 'region_code', how='left')
+
     if include_zeros_checkbox_value:
-        oblast_dist_prep_graph_data_df = planned_oblast_dist_graph_data_prep_df
+        oblast_dist_prep_graph_data_df = planned_oblast_dist_graph_data_prep_df_with_region_names
 
     else:
-        oblast_dist_prep_graph_data_df = planned_oblast_dist_graph_data_prep_df.loc[planned_oblast_dist_graph_data_prep_df['Planned_qty']>0]
+        oblast_dist_prep_graph_data_df = planned_oblast_dist_graph_data_prep_df_with_region_names.loc[planned_oblast_dist_graph_data_prep_df_with_region_names['Planned_qty']>0]
 
     return oblast_dist_prep_graph_data_df
 
 def closed_graph_prep(closed_df, include_zeros_checkbox_value):
     # готовим данные для завершенных ивентов
-    closed_df_groupped_by_regions = closed_df.groupby(['Close_date', 'Oblast']).size().to_frame('size').reset_index()
-    closed_df_groupped_by_regions_sum = closed_df_groupped_by_regions.groupby(['Oblast'], as_index=False)['size'].sum()
-    closed_oblast_dist_graph_data_prep_df = pd.merge(regions_list, closed_df_groupped_by_regions_sum, on='Oblast',
+    closed_df_groupped_by_regions = closed_df.groupby(['Close_date', 'region_code']).size().to_frame('size').reset_index()
+    closed_df_groupped_by_regions_sum = closed_df_groupped_by_regions.groupby(['region_code'], as_index=False)['size'].sum()
+    closed_oblast_dist_graph_data_prep_df = pd.merge(regions_list, closed_df_groupped_by_regions_sum, on='region_code',
                                                      how='left')
     closed_oblast_dist_graph_data_prep_df.rename(columns={'size': 'Closed_qty'}, inplace=True)
     closed_oblast_dist_graph_data_prep_df.fillna(0, inplace=True)
     closed_oblast_dist_graph_data_prep_df.sort_values(['Closed_qty'], inplace=True)
-
+    closed_oblast_dist_graph_data_prep_df_with_region_names = pd.merge(closed_oblast_dist_graph_data_prep_df,
+                                                                        region_list_names, on='region_code', how='left')
     if include_zeros_checkbox_value:
-        oblast_dist_closed_graph_data_df = closed_oblast_dist_graph_data_prep_df
+        oblast_dist_closed_graph_data_df = closed_oblast_dist_graph_data_prep_df_with_region_names
 
     else:
-        oblast_dist_closed_graph_data_df = closed_oblast_dist_graph_data_prep_df.loc[
-            closed_oblast_dist_graph_data_prep_df['Closed_qty'] > 0]
+        oblast_dist_closed_graph_data_df = closed_oblast_dist_graph_data_prep_df_with_region_names.loc[
+            closed_oblast_dist_graph_data_prep_df_with_region_names['Closed_qty'] > 0]
 
     return oblast_dist_closed_graph_data_df
 
+# просроченные. Если статус не равен "Завершенная" и дата планиварования раньше текущей даты
+def overdue_graph_prep(overdue_meetings_date_selected_df, include_zeros_checkbox_value):
+    # Выбираем строки в которых статус не равен "завершенный"
+    #overdue_meetings_date_selected_df.to_csv('Data/overdue_before_selected_delete.csv')
+    overdue_selected = overdue_meetings_date_selected_df.loc[overdue_meetings_date_selected_df['Event_status'].isin([1,2])]
+
+    overdue_df_groupped_by_regions = overdue_selected.groupby(['Plan_date', 'region_code']).size().to_frame('size').reset_index()
+    overdue_df_groupped_by_regions_sum = overdue_df_groupped_by_regions.groupby(['region_code'], as_index=False)['size'].sum()
+    overdue_oblast_dist_graph_data_prep_df = pd.merge(regions_list, overdue_df_groupped_by_regions_sum, on='region_code',
+                                                     how='left')
+    overdue_oblast_dist_graph_data_prep_df.rename(columns={'size': 'Overdue_qty'}, inplace=True)
+    overdue_oblast_dist_graph_data_prep_df.fillna(0, inplace=True)
+    overdue_oblast_dist_graph_data_prep_df.sort_values(['Overdue_qty'], inplace=True)
+    overdue_oblast_dist_graph_data_prep_df_with_region_names = pd.merge(overdue_oblast_dist_graph_data_prep_df,
+                                                                       region_list_names, on='region_code', how='left')
+    if include_zeros_checkbox_value:
+        oblast_dist_overdue_graph_data_df = overdue_oblast_dist_graph_data_prep_df_with_region_names
+    else:
+        oblast_dist_overdue_graph_data_df = overdue_oblast_dist_graph_data_prep_df_with_region_names.loc[
+            overdue_oblast_dist_graph_data_prep_df_with_region_names['Overdue_qty'] > 0]
+    return oblast_dist_overdue_graph_data_df
+
+def cut_df_by_dates_interval(df, date_field_name, start_date, end_date):
+    start_date = start_date
+    end_date = end_date
+    after_start_date = df.loc[:, date_field_name] >= start_date
+    before_end_date = df.loc[:, date_field_name] <= end_date
+    between_two_dates = after_start_date & before_end_date
+    result_df = df.loc[between_two_dates]
+    return result_df
 
 
 
@@ -134,17 +170,6 @@ def closed_graph_prep(closed_df, include_zeros_checkbox_value):
 #     #     oblast_dist_graph_data__result_df = oblast_dist_graph_data_df_without_zeros_in_closed_events
 #
 #     return closed_oblast_dist_graph_data_prep_df, planned_oblast_dist_graph_data_prep_df
-
-
-
-def cut_df_by_dates_interval(df, date_field_name, start_date, end_date):
-    start_date = start_date
-    end_date = end_date
-    after_start_date = df.loc[:, date_field_name] >= start_date
-    before_end_date = df.loc[:, date_field_name] <= end_date
-    between_two_dates = after_start_date & before_end_date
-    result_df = df.loc[between_two_dates]
-    return result_df
 
 
 # группируем. 1. по запланированной дате

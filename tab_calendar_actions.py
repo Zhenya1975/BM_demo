@@ -6,6 +6,7 @@ import initial_values
 
 regions = initial_values.region_checklist_data()[0]
 regions_list = initial_values.region_checklist_data()[1]
+managers = initial_values.managers_checklist_data()
 
 def calendar_actions():
     calendar_actions_tab_block = dcc.Tab(
@@ -20,40 +21,77 @@ def calendar_actions():
                             html.Div(style={'paddingLeft': '30px', 'paddingRight': '20px',
                                             'marginTop': '10px', 'color': 'white'},
                                      children=[
-                                         html.P(),
 
                                          # html.B('Регионы'),
-                                         html.P(),
+                                         #html.Div(id = 'region_selector'),
+
                                          html.Div(style={'marginLeft': '3px'},
                                                   children=[
+                                                      html.Div(),
                                                       dcc.Dropdown(id='regionselector',
                                                                    options=regions,
                                                                    multi=True,
                                                                    #value=,
                                                                    #style={'backgroundColor': '#181922', 'color':'black'},
-                                                                   #className='stockselector',
+
                                                                    placeholder='Регион...',
                                                                    #className = "dash-bootstrap"
                                                                    ),
                                                       html.P(),
-                                                      dbc.Button("Выбрать все", size="sm",
-                                                                 id="select_all_regions_button_tab_calendar_actions",
-                                                                 style={'marginBottom': '3px',
-                                                                        'marginTop': '3px',
-                                                                        'backgroundColor': '#232632'}),
-                                                      dbc.Button("Снять выбор", color="secondary",
-                                                                 size="sm",
-                                                                 style={'marginBottom': '3px',
-                                                                        'marginTop': '3px',
-                                                                        'backgroundColor': '#232632'},
-                                                                 id="release_all_regions_button_tab_calendar_actions"),
+                                                      html.Div(id='result_div_checklist',
+                                                               children=[
+                                                                   html.P(),
+                                                                   dbc.Button("Выбрать все", size="sm",
+                                                                              id="select_all_regions_button_tab_calendar_actions",
+                                                                              style={'marginBottom': '3px',
+                                                                                     'marginTop': '3px',
+                                                                                     'backgroundColor': '#232632'}),
+                                                                   dbc.Button("Снять выбор", color="secondary",
+                                                                              size="sm",
+                                                                              style={'marginBottom': '3px',
+                                                                                     'marginTop': '3px',
+                                                                                     'backgroundColor': '#232632'},
+                                                                              id="release_all_regions_button_tab_calendar_actions"),
+                                                                   html.P(),
+                                                                   dcc.Checklist(
+                                                                       id='region_selector_checklist_calendar_actions_tab',
+                                                                       options=regions,
+                                                                       #value=regions_list,
+                                                                       labelStyle=dict(display='block')),
+                                                                   html.Hr(className="hr"),
+
+
+                                                               ],
+                                                               ),
+                                                      html.Div(
+                                                          id='managers_check-list_div',
+                                                          children=[
+                                                              # блок чек-боксов с Менеджерами
+                                                              html.P(),
+                                                              dbc.Button("Выбрать все", size="sm",
+                                                                         id="select_all_managers_button_tab_calendar_actions",
+                                                                         style={'marginBottom': '3px',
+                                                                                'marginTop': '3px',
+                                                                                'backgroundColor': '#232632'}),
+                                                              dbc.Button("Снять выбор", color="secondary",
+                                                                         size="sm",
+                                                                         style={'marginBottom': '3px',
+                                                                                'marginTop': '3px',
+                                                                                'backgroundColor': '#232632'},
+                                                                         id="release_all_managers_button_tab_calendar_actions"),
+                                                              html.P(),
+                                                              dcc.Checklist(
+                                                                  id='managers_selector_checklist_calendar_actions_tab',
+                                                                  #options=regions,
+                                                                  #value=regions_list,
+                                                                  labelStyle=dict(display='block')
+                                                              ),
+                                                          ]
+                                                      )
                                                   ]
                                                   ),
-                                         dcc.Checklist(id='region_selector_checklist_calendar_actions_tab',
-                                                       options=regions,
-                                                       value=regions_list,
-                                                       labelStyle=dict(display='block')),
-                                         html.Hr(className="hr"),
+
+
                                      ])
 
                         ]
@@ -91,7 +129,7 @@ def calendar_actions():
                                          ]),
                                          html.P(),
                                          dbc.Row([
-                                             dbc.Col(width=6,
+                                             dbc.Col(width=4,
                                                      children=[
                                                          #dcc.Graph(id='meetings_day_distribution_graph', config={'displayModeBar': False}),
                                                          dcc.Graph(id='closed_meetings_day_distribution_graph',
@@ -100,10 +138,20 @@ def calendar_actions():
 
                                                      ]
                                                      ),
-                                             dbc.Col(width=6,
+                                             dbc.Col(width=4,
                                                      children=[
 
                                                          dcc.Graph(id='open_meetings_day_distribution_graph',
+                                                                   config={'displayModeBar': False}),
+                                                         html.P(),
+
+                                                         html.P(),
+                                                     ]
+                                                     ),
+                                             dbc.Col(width=4,
+                                                     children=[
+
+                                                         dcc.Graph(id='overdue_meetings_day_distribution_graph',
                                                                    config={'displayModeBar': False}),
                                                          html.P(),
 
@@ -130,3 +178,4 @@ def calendar_actions():
 
     )
     return calendar_actions_tab_block
+
