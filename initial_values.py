@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 import datetime
 # готовим events.csv
 events_df = pd.read_csv('Data/events_source.csv')
@@ -66,8 +67,49 @@ def region_checklist_data():
     return region_checklist_data, region_list
 #print(region_checklist_data()[0])
 
+#  собираем данные о менеджеерах и регионах из events
+def prepare_users_list():
+    events_df = pd.read_csv('Data/events.csv')
+    list_of_users = events_df.loc[:, ['Name_eng']]
+    list_of_unique_users = pd.DataFrame(list_of_users['Name_eng'].unique(), columns=['user_code'])
+    result_df_list = []
+    for index, row_user_code in list_of_unique_users.iterrows():
+        dict_temp = {}
+        user_code = row_user_code['user_code']
+        temp_df = events_df.loc[events_df['Name_eng']==user_code]
+        user_region_list = []
+        for index, row_events_selection in temp_df.iterrows():
+            region_code = row_events_selection['region_code']
+            if region_code !=0 and region_code not in user_region_list:
+                user_region_list.append(region_code)
+        dict_temp['user_code'] = user_code
+        dict_temp['regions_list'] = user_region_list
+        result_df_list.append(dict_temp)
+    user_region_df = pd.DataFrame(result_df_list)
+    user_region_df.to_csv('Data/user_regions')
+
+    return list_of_unique_users
+
+#prepare_users_list()
+
+def get_users_regions_df():
+    users_regions_df= pd.read_csv('Data/user_regions')
+    users_regions_df['regions_list'] = users_regions_df['regions_list'].apply(lambda x: json.loads(x))
+    return users_regions_df
+#selected_regions = [36, 47]
+#selected_user_region_list = test_df['regions_list'][5]
+
+def check_user_in_region(a, b):
+  return not set(a).isdisjoint(b)
+
+def filter_users_by_regions(user_list, selected_region_list):
+    users_regions_df = get_users_regions_df()
+
+    user_list = user_list
 
 
+
+#print(func(selected_regions, selected_user_region_list))
 # готовим список пользователей
 users_df = pd.read_csv('Data/users.csv')
 def managers_checklist_data():

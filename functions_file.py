@@ -2,12 +2,14 @@ import pandas as pd
 from dash import callback_context
 import datetime
 import initial_values
+import json
 from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 # получаем список регионов в виде кодов регионов
 regions_list = pd.DataFrame(initial_values.region_checklist_data()[1], columns=['region_code'])
 regions = initial_values.region_checklist_data()[0]
 regions_full = pd.read_csv('Data/regions.csv')
+users_full = pd.read_csv('Data/users.csv')
 
 def selectall_relese_all_buttons(id_select_all_button, id_release_all_button, options):
     """Обработчик Выбрать все / Снять выбор"""
@@ -124,9 +126,10 @@ def query_selections(df):
     users_unique.sort_values('user_code', ignore_index = True)
     return region_code_unique, users_unique
 
-def get_unique_region_and_users(planned_selections, closed_selections, overdue_selections):
-    """получаем данные для чек-боксов регионов и пользователей"""
+def get_unique_region(planned_selections, closed_selections, overdue_selections):
+    """получаем данные для чек-боксов пользователей"""
     # склеиваем списки регионов
+    #print('planned_selections:', planned_selections)
     region_list_planned = planned_selections['region_code']
     region_list_closed = closed_selections['region_code']
     region_list_overdue = overdue_selections['region_code']
@@ -144,6 +147,50 @@ def get_unique_region_and_users(planned_selections, closed_selections, overdue_s
         region_checklist_data.append(dict_temp)
         region_list.append(row['region_code'])
     return region_checklist_data, region_list
+
+def check_user_in_region(a, b):
+  return not set(a).isdisjoint(b)
+
+def get_unique_users(planned_selections, closed_selections, overdue_selections, region_list):
+    """получаем данные для чек-боксов пользователей"""
+    #print(planned_selections)
+    users_list_planned = planned_selections['user_code']
+    users_list_closed = closed_selections['user_code']
+    users_list_overdue = overdue_selections['user_code']
+    users_concat_list = pd.concat([users_list_planned, users_list_closed, users_list_overdue], ignore_index=True)
+    users_unique_list = pd.DataFrame(users_concat_list.unique(), columns=['user_code'])
+    # фильтруем список юзеров по регионам
+
+    # users_regions_df - код юзера - список регионов
+    users_regions_df = initial_values.get_users_regions_df()
+    #print(users_regions_df['user_code'])
+    # region_list - список регионов, выбранных в фильтрах.
+    region_list = region_list
+
+    # нужно ответить на вопрос есть ли юзеры в списке users_unique_list в выбранных регионах
+    # джойним users_unique_list с users_regions_df
+    users_unique_list_with_regions = pd.merge(users_unique_list, users_regions_df, on='user_code', how='left')
+    user_list_cut_by_regions = []
+    for index, row in users_unique_list_with_regions.iterrows():
+        a  = row['regions_list']
+        b = region_list
+        if check_user_in_region(a, b):
+            user_list_cut_by_regions.append(row['user_code'])
+
+    user_list_cut_by_regions_df = pd.DataFrame(user_list_cut_by_regions, columns=['user_code'])
+
+    users_with_names = pd.merge(user_list_cut_by_regions_df, users_full, on='user_code', how='left')
+    users_with_names.sort_values('Name', inplace=True)
+    users_checklist_data = []
+    users_list = []
+    for index, row in users_with_names.iterrows():
+        dict_temp = {}
+        dict_temp['label'] = " " + row['Name'] + ', ' + row['Position']
+        dict_temp['value'] = row['user_code']
+        users_checklist_data.append(dict_temp)
+        users_list.append(row['user_code'])
+
+    return users_checklist_data, users_list
 
 
 

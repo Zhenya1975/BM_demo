@@ -117,8 +117,11 @@ def calendar_actions():
 
                                              ),
 
+
                                          ]),
-                                         html.P(),
+
+
+
                                          dbc.Row([
                                              dbc.Col(width=4,
                                                      children=[
