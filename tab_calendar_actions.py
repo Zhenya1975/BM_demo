@@ -27,16 +27,7 @@ def calendar_actions():
 
                                          html.Div(style={'marginLeft': '3px'},
                                                   children=[
-                                                      html.Div(),
-                                                      dcc.Dropdown(id='regionselector',
-                                                                   options=regions,
-                                                                   multi=True,
-                                                                   #value=,
-                                                                   #style={'backgroundColor': '#181922', 'color':'black'},
 
-                                                                   placeholder='Регион...',
-                                                                   #className = "dash-bootstrap"
-                                                                   ),
                                                       html.P(),
                                                       html.Div(id='result_div_checklist',
                                                                children=[
@@ -55,7 +46,7 @@ def calendar_actions():
                                                                    html.P(),
                                                                    dcc.Checklist(
                                                                        id='region_selector_checklist_calendar_actions_tab',
-                                                                       options=regions,
+                                                                       #options=regions,
                                                                        #value=regions_list,
                                                                        labelStyle=dict(display='block')),
                                                                    html.Hr(className="hr"),

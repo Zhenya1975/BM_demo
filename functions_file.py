@@ -7,6 +7,7 @@ import dash_bootstrap_components as dbc
 # получаем список регионов в виде кодов регионов
 regions_list = pd.DataFrame(initial_values.region_checklist_data()[1], columns=['region_code'])
 regions = initial_values.region_checklist_data()[0]
+regions_full = pd.read_csv('Data/regions.csv')
 
 def selectall_relese_all_buttons(id_select_all_button, id_release_all_button, options):
     """Обработчик Выбрать все / Снять выбор"""
@@ -111,6 +112,38 @@ def cut_df_by_dates_interval(df, date_field_name, start_date, end_date):
     between_two_dates = after_start_date & before_end_date
     result_df = df.loc[between_two_dates]
     return result_df
+
+def query_selections(df):
+    """query_selections - это выборки списков кодов регионов и пользователей"""
+    events_df_temp = df.loc[df['region_code']>0]
+    region_code_full_list = events_df_temp['region_code']
+    region_code_unique = pd.DataFrame(region_code_full_list.unique(), columns=['region_code'])
+
+    users_full_list = df['Name_eng']
+    users_unique = pd.DataFrame(users_full_list.unique(), columns=['user_code'])
+    users_unique.sort_values('user_code', ignore_index = True)
+    return region_code_unique, users_unique
+
+def get_unique_region_and_users(planned_selections, closed_selections, overdue_selections):
+    """получаем данные для чек-боксов регионов и пользователей"""
+    # склеиваем списки регионов
+    region_list_planned = planned_selections['region_code']
+    region_list_closed = closed_selections['region_code']
+    region_list_overdue = overdue_selections['region_code']
+    regions_concat_list = pd.concat([region_list_planned, region_list_closed, region_list_overdue], ignore_index=True)
+    regions_unique_list = pd.DataFrame(regions_concat_list.unique(), columns=['region_code'])
+    # left join кодов регионов и наименований регионов
+    regions_with_names = pd.merge(regions_unique_list, regions_full, on='region_code', how='left')
+    regions_with_names.sort_values('region_name', inplace=True)
+    region_checklist_data = []
+    region_list = []
+    for index, row in regions_with_names.iterrows():
+        dict_temp = {}
+        dict_temp['label'] = " " + row['region_name']
+        dict_temp['value'] = row['region_code']
+        region_checklist_data.append(dict_temp)
+        region_list.append(row['region_code'])
+    return region_checklist_data, region_list
 
 
 
