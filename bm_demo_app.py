@@ -104,7 +104,7 @@ event_df = functions_file.get_event_df()
         Input('my-date-picker-range', 'end_date'),
         Input('include_zeros_regions', 'value'),
    ])
-def events_distribution(select_all_regions_button_tab_calendar_actions, release_all_regions_button_tab_calendar_action, regions_from_checklist, select_all_managers_button_tab_calendar_actions, release_all_regions_button_tab_calendar_actions, managers_selector_checklist_calendar_actions_tab, start_date, end_date, include_zeros_checkbox_value):
+def events_distribution(select_all_regions_button_tab_calendar_actions, release_all_regions_button_tab_calendar_action, regions_from_checklist, select_all_managers_button_tab_calendar_actions, release_all_regions_button_tab_calendar_actions, managers_from_checklist, start_date, end_date, include_zeros_checkbox_value):
     # Готовим выборку из events в срезах Запланированные встречи, Завершенные встречи и Просроченные встречи
     start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
     end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d").date()
@@ -117,7 +117,7 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     # здесь нам нужно получить список регионов и список options для чек-листа, которые попали в выборку по датам Плановой даты
     # отдаем plan_date_selected_df - получаем списки регионов и пользователей
     planned_selections = functions_file.query_selections(plan_date_selected_df)
-    #print(planned_selections)
+
     # close_date_selected_df - это event_df обрезанный по датам завершения из прошлого до сегодня.
     close_date_selected_df = functions_file.cut_df_by_dates_interval(event_df, 'Close_date', start_date, close_date_finish)
     closed_selections = functions_file.query_selections(close_date_selected_df)
@@ -131,25 +131,46 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     regions_data = functions_file.get_unique_region(planned_selections[0], closed_selections[0], overdue_selections[0])
     regions_options = regions_data[0]
     regions_list = regions_data[1]
-
-    region_list_value = regions_list
-    region_list_options = regions_options
-    id_checklist = 'region_selector_checklist_calendar_actions_tab'
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    if id_checklist in changed_id:
+
+
+    if regions_from_checklist:
         region_list_value = regions_from_checklist
+    else:
+        region_list_value = regions_list
+
+    region_list_options = regions_options
+    id_checklist_region = 'region_selector_checklist_calendar_actions_tab'
+
+    if id_checklist_region in changed_id:
+        region_list_value = regions_from_checklist
+
+
 
     # Обработчик кнопок Снять / Выбрать в блоке Регионы
     id_select_all_button = "select_all_regions_button_tab_calendar_actions"
     id_release_all_button = "release_all_regions_button_tab_calendar_actions"
+
     if id_select_all_button in changed_id:
         region_list_value = regions_list
     elif id_release_all_button in changed_id:
         region_list_value = []
-    # Получаем уникальные список ользователей
-    users_data = functions_file.get_unique_users(planned_selections[1], closed_selections[1], overdue_selections[1], region_list_value)
-    users_options = users_data[0]
-    users_list = users_data[1]
+
+    ################# блок получения данных для чек-листа пользователей ################
+    users_data = functions_file.get_unique_users(planned_selections[1], closed_selections[1], overdue_selections[1],
+                                                 region_list_value, managers_from_checklist)
+    users_list_options = users_data[0]
+    users_list_values = users_data[1]
+
+
+
+
+
+    id_checklist_users = 'managers_selector_checklist_calendar_actions_tab'
+    if id_checklist_users in changed_id:
+        users_list_values = managers_from_checklist
+
+
 
 
 
@@ -204,7 +225,7 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
 
 
 
-    return region_list_value, region_list_options, users_list, users_options, closed_graph_fig, planned_graph_fig, overdue_graph_fig
+    return region_list_value, region_list_options, users_list_values, users_list_options, closed_graph_fig, planned_graph_fig, overdue_graph_fig
 
 if __name__ == "__main__":
     app.run_server(debug=True)

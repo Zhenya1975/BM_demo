@@ -129,7 +129,7 @@ def query_selections(df):
 def get_unique_region(planned_selections, closed_selections, overdue_selections):
     """получаем данные для чек-боксов пользователей"""
     # склеиваем списки регионов
-    #print('planned_selections:', planned_selections)
+
     region_list_planned = planned_selections['region_code']
     region_list_closed = closed_selections['region_code']
     region_list_overdue = overdue_selections['region_code']
@@ -151,31 +151,34 @@ def get_unique_region(planned_selections, closed_selections, overdue_selections)
 def check_user_in_region(a, b):
   return not set(a).isdisjoint(b)
 
-def get_unique_users(planned_selections, closed_selections, overdue_selections, region_list):
+def get_unique_users(planned_selections, closed_selections, overdue_selections, region_list_value, managers_from_checklist):
     """получаем данные для чек-боксов пользователей"""
-    #print(planned_selections)
+
     users_list_planned = planned_selections['user_code']
     users_list_closed = closed_selections['user_code']
     users_list_overdue = overdue_selections['user_code']
     users_concat_list = pd.concat([users_list_planned, users_list_closed, users_list_overdue], ignore_index=True)
     users_unique_list = pd.DataFrame(users_concat_list.unique(), columns=['user_code'])
-    # фильтруем список юзеров по регионам
 
     # users_regions_df - код юзера - список регионов
     users_regions_df = initial_values.get_users_regions_df()
-    #print(users_regions_df['user_code'])
+    #print('managers_from_checklist: ', managers_from_checklist)
     # region_list - список регионов, выбранных в фильтрах.
-    region_list = region_list
+
+    region_list = region_list_value
 
     # нужно ответить на вопрос есть ли юзеры в списке users_unique_list в выбранных регионах
     # джойним users_unique_list с users_regions_df
     users_unique_list_with_regions = pd.merge(users_unique_list, users_regions_df, on='user_code', how='left')
+
     user_list_cut_by_regions = []
     for index, row in users_unique_list_with_regions.iterrows():
-        a  = row['regions_list']
+        a = row['regions_list']
         b = region_list
         if check_user_in_region(a, b):
             user_list_cut_by_regions.append(row['user_code'])
+
+
 
     user_list_cut_by_regions_df = pd.DataFrame(user_list_cut_by_regions, columns=['user_code'])
 
@@ -190,7 +193,7 @@ def get_unique_users(planned_selections, closed_selections, overdue_selections, 
         users_checklist_data.append(dict_temp)
         users_list.append(row['user_code'])
 
-    return users_checklist_data, users_list
+    return users_checklist_data, user_list_cut_by_regions
 
 
 
@@ -256,4 +259,3 @@ def get_unique_users(planned_selections, closed_selections, overdue_selections, 
 # today = datetime.datetime.now().date()
 # planned_meetings_today_df = events_df.loc[events_df['Plan_date'] == today]
 # planned_meetings_today_groupped_df = planned_meetings_today_df.groupby('Plan_date').size().to_frame('size').reset_index()
-# print(planned_meetings_today_groupped_df)
