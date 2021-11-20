@@ -41,6 +41,16 @@ def get_event_df():
     return events_df
 region_list_names = pd.read_csv('Data/regions.csv')
 def planned_graph_prep(planned_df, include_zeros_checkbox_value):
+
+    planned_df_groupped_by_users = planned_df.groupby(['Plan_date', 'user_code']).size().to_frame('size').reset_index()
+    planned_df_groupped_by_users_sum = planned_df_groupped_by_users.groupby(['user_code'], as_index=False)[
+        'size'].sum()
+    planned_users_dist_graph_data_prep_df = pd.merge(planned_df_groupped_by_users_sum, users_full, on='user_code', how='left')
+    planned_users_dist_graph_data_prep_df.rename(columns={'size': 'Planned_qty'}, inplace=True)
+
+    planned_users_dist_graph_data_prep_df.fillna(0, inplace=True)
+    planned_users_dist_graph_data_prep_df.sort_values(['Planned_qty'], inplace=True)
+
     # создаем выборку для построения графика по регионам
     planned_df_groupped_by_regions = planned_df.groupby(['Plan_date', 'region_code']).size().to_frame('size').reset_index()
     # получаем список регионов и количество запланированных встреч
@@ -62,10 +72,18 @@ def planned_graph_prep(planned_df, include_zeros_checkbox_value):
     else:
         oblast_dist_prep_graph_data_df = planned_oblast_dist_graph_data_prep_df_with_region_names.loc[planned_oblast_dist_graph_data_prep_df_with_region_names['Planned_qty']>0]
 
-    return oblast_dist_prep_graph_data_df
+    return oblast_dist_prep_graph_data_df, planned_users_dist_graph_data_prep_df
 
 def closed_graph_prep(closed_df, include_zeros_checkbox_value):
-    # готовим данные для завершенных ивентов
+    # готовим данные для завершенных ивентов по юзерам
+    closed_df_groupped_by_users = closed_df.groupby(['Close_date', 'user_code']).size().to_frame('size').reset_index()
+    closed_df_groupped_by_users_sum = closed_df_groupped_by_users.groupby(['user_code'], as_index=False)['size'].sum()
+    closed_users_dist_graph_data_prep_df = pd.merge(closed_df_groupped_by_users_sum, users_full, on='user_code', how='left')
+    closed_users_dist_graph_data_prep_df.rename(columns={'size': 'Closed_qty'}, inplace=True)
+    closed_users_dist_graph_data_prep_df.fillna(0, inplace=True)
+    closed_users_dist_graph_data_prep_df.sort_values(['Closed_qty'], inplace=True)
+
+    # готовим данные для завершенных ивентов по регионам
     closed_df_groupped_by_regions = closed_df.groupby(['Close_date', 'region_code']).size().to_frame('size').reset_index()
     closed_df_groupped_by_regions_sum = closed_df_groupped_by_regions.groupby(['region_code'], as_index=False)['size'].sum()
     closed_oblast_dist_graph_data_prep_df = pd.merge(regions_list, closed_df_groupped_by_regions_sum, on='region_code',
@@ -82,7 +100,7 @@ def closed_graph_prep(closed_df, include_zeros_checkbox_value):
         oblast_dist_closed_graph_data_df = closed_oblast_dist_graph_data_prep_df_with_region_names.loc[
             closed_oblast_dist_graph_data_prep_df_with_region_names['Closed_qty'] > 0]
 
-    return oblast_dist_closed_graph_data_df
+    return oblast_dist_closed_graph_data_df, closed_users_dist_graph_data_prep_df
 
 # просроченные. Если статус не равен "Завершенная" и дата планиварования раньше текущей даты
 def overdue_graph_prep(overdue_meetings_date_selected_df, include_zeros_checkbox_value):
@@ -121,7 +139,7 @@ def query_selections(df):
     region_code_full_list = events_df_temp['region_code']
     region_code_unique = pd.DataFrame(region_code_full_list.unique(), columns=['region_code'])
 
-    users_full_list = df['Name_eng']
+    users_full_list = df['user_code']
     users_unique = pd.DataFrame(users_full_list.unique(), columns=['user_code'])
     users_unique.sort_values('user_code', ignore_index = True)
     return region_code_unique, users_unique
@@ -188,7 +206,7 @@ def get_unique_users(planned_selections, closed_selections, overdue_selections, 
     users_list = []
     for index, row in users_with_names.iterrows():
         dict_temp = {}
-        dict_temp['label'] = " " + row['Name'] + ', ' + row['Position']
+        dict_temp['label'] = " " + str(row['Name']) + ', ' + str(row['Position'])
         dict_temp['value'] = row['user_code']
         users_checklist_data.append(dict_temp)
         users_list.append(row['user_code'])

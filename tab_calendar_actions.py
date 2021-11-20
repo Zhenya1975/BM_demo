@@ -119,7 +119,8 @@ def calendar_actions():
 
 
                                          ]),
-
+                                         html.Div(style={'paddingTop': '10px',},
+                                                  children=[html.H4('РEГИОНЫ'),]),
 
 
                                          dbc.Row([
@@ -163,6 +164,40 @@ def calendar_actions():
                                                      # labelStyle=dict(display='block')
                                                  ),
                                              ),
+                                         ]),
+                                         # Графики по пользователям
+                                         html.Div(style={'paddingTop': '10px', },
+                                                  children=[html.H4('МЕНЕДЖЕРЫ'), ]),
+                                         dbc.Row([
+                                             dbc.Col(width=4,
+                                                     children=[
+                                                         # dcc.Graph(id='meetings_day_distribution_graph', config={'displayModeBar': False}),
+                                                         dcc.Graph(id='closed_meetings_user_distribution_graph',
+                                                                   config={'displayModeBar': False}),
+                                                         html.P(),
+
+                                                     ]
+                                                     ),
+                                             dbc.Col(width=4,
+                                                     children=[
+
+                                                         dcc.Graph(id='open_meetings_user_distribution_graph',
+                                                                   config={'displayModeBar': False}),
+                                                         html.P(),
+
+                                                         html.P(),
+                                                     ]
+                                                     ),
+                                             dbc.Col(width=4,
+                                                     children=[
+
+                                                         dcc.Graph(id='overdue_meetings_user_distribution_graph',
+                                                                   config={'displayModeBar': False}),
+                                                         html.P(),
+
+                                                         html.P(),
+                                                     ]
+                                                     ),
                                          ]),
                                      ])
                             ]),

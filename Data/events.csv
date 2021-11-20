@@ -1,4 +1,4 @@
-,event_id,Create_date,Description,Name_eng,Deadline_date,Event_status,Close_date,Customer_id,Deal_id,Plan_date,region_code
+,event_id,Create_date,Description,user_code,Deadline_date,Event_status,Close_date,Customer_id,Deal_id,Plan_date,region_code
 0,49584,14.11.2021,Работа в офисе.,"Gridin, Sergey",12.11.2021,2,01.01.1970,-1,0,12.11.2021,0
 1,49583,14.11.2021,Встреча. Переговоры по сделке.,"Gridin, Sergey",11.11.2021,2,01.01.1970,2977,5899,11.11.2021,36
 2,49582,14.11.2021,Встреча. Переговоры по сделке.,"Gridin, Sergey",11.11.2021,2,01.01.1970,805,5570,11.11.2021,36

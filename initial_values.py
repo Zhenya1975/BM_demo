@@ -15,7 +15,7 @@ events_df = events_df.rename(columns={
     "Дата завершения":"Close_date",
 
     "Описание":"Description",
-    "Ответственный":"Name_eng",
+    "Ответственный":"user_code",
     "Завершить не позднее":"Deadline_date",
     "Статус":"Event_status",
     "ID клиента":"Customer_id",
@@ -34,7 +34,7 @@ for index, row in regions_df.iterrows():
 events_df['region_code'] = events_df['Oblast'].map(region_dict)
 events_df.fillna(value={"region_code": 0, 'Customer_id': -1, 'Deal_id': 0}, inplace=True)
 events_df = events_df.astype({"region_code": int, 'Customer_id': int, 'Deal_id': int})
-events_df_selected = events_df.loc[:, ['event_id', 'Create_date', 'Description', 'Name_eng', 'Deadline_date', 'Event_status', 'Close_date', 'Customer_id', 'Deal_id', 'Plan_date', 'region_code']]
+events_df_selected = events_df.loc[:, ['event_id', 'Create_date', 'Description', 'user_code', 'Deadline_date', 'Event_status', 'Close_date', 'Customer_id', 'Deal_id', 'Plan_date', 'region_code']]
 events_df_selected.replace({"Event_status": event_status_dict}, inplace=True)
 # конвертируем даты в даты
 # date_column_list = ['Create_date', 'Deadline_date', 'Close_date', 'Plan_date']
@@ -70,13 +70,13 @@ def region_checklist_data():
 #  собираем данные о менеджеерах и регионах из events
 def prepare_users_list():
     events_df = pd.read_csv('Data/events.csv')
-    list_of_users = events_df.loc[:, ['Name_eng']]
-    list_of_unique_users = pd.DataFrame(list_of_users['Name_eng'].unique(), columns=['user_code'])
+    list_of_users = events_df.loc[:, ['user_code']]
+    list_of_unique_users = pd.DataFrame(list_of_users['user_code'].unique(), columns=['user_code'])
     result_df_list = []
     for index, row_user_code in list_of_unique_users.iterrows():
         dict_temp = {}
         user_code = row_user_code['user_code']
-        temp_df = events_df.loc[events_df['Name_eng']==user_code]
+        temp_df = events_df.loc[events_df['user_code']==user_code]
         user_region_list = []
         for index, row_events_selection in temp_df.iterrows():
             region_code = row_events_selection['region_code']
