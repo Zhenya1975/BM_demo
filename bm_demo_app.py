@@ -170,12 +170,18 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     if id_checklist_users in changed_id:
         users_list_values = managers_from_checklist
 
+    # Обработчик кнопок Снять / Выбрать в блоке Пользователи
+    id_select_all_users_button = "select_all_managers_button_tab_calendar_actions"
+    id_release_all_users_button = "release_all_managers_button_tab_calendar_actions"
 
-
-
+    if id_select_all_users_button in changed_id:
+        users_list_values = users_data[1]
+    elif id_release_all_users_button in changed_id:
+        users_list_values = []
 
     # список регионов для формирования графика
-    plan_date_selected_with_regions_df = plan_date_selected_df.loc[plan_date_selected_df['region_code'].isin(region_list_value)]
+
+    plan_date_selected_with_regions_df = plan_date_selected_df.loc[plan_date_selected_df['region_code'].isin(region_list_value) & plan_date_selected_df['Name_eng'].isin(users_list_values)]
     planned_graph_data = functions_file.planned_graph_prep(plan_date_selected_with_regions_df, include_zeros_checkbox_value)
     #  общее количество Запланировано. Для вывода в заголовок графика
     planned_total_qty = int(planned_graph_data['Planned_qty'].sum())
@@ -191,7 +197,7 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
         template ='plotly_dark', title='Запланировано: {}<br><sup>c {} по {}</sup> '.format(planned_total_qty, start_open, end_open),
     )
 
-    close_date_selected_df = close_date_selected_df.loc[close_date_selected_df['region_code'].isin(region_list_value)]
+    close_date_selected_df = close_date_selected_df.loc[close_date_selected_df['region_code'].isin(region_list_value) & close_date_selected_df['Name_eng'].isin(users_list_values)]
     closed_graph_data = functions_file.closed_graph_prep(close_date_selected_df, include_zeros_checkbox_value)
     closed_total_qty = int(closed_graph_data['Closed_qty'].sum())
     closed_graph_fig = go.Figure()
@@ -205,7 +211,7 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
         template='plotly_dark', title='Завершено: {}<br><sup>c {} по {}</sup> '.format(closed_total_qty, start_close, end_close),
     )
 
-    overdue_meetings_date_selected_df = overdue_meetings_date_selected_df.loc[overdue_meetings_date_selected_df['region_code'].isin(region_list_value)]
+    overdue_meetings_date_selected_df = overdue_meetings_date_selected_df.loc[overdue_meetings_date_selected_df['region_code'].isin(region_list_value) & overdue_meetings_date_selected_df['Name_eng'].isin(users_list_values)]
     overdue_graph_data = functions_file.overdue_graph_prep(overdue_meetings_date_selected_df, include_zeros_checkbox_value)
 
 
