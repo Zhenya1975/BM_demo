@@ -93,6 +93,7 @@ event_df = functions_file.get_event_df()
     Output('overdue_meetings_day_distribution_graph', 'figure'),
     Output('open_meetings_user_distribution_graph', 'figure'),
     Output('closed_meetings_user_distribution_graph', 'figure'),
+    Output('overdue_meetings_user_distribution_graph', 'figure'),
    ],
 
     [
@@ -251,8 +252,25 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
         template='plotly_dark', title='Завершено: {}<br><sup>c {} по {}</sup> '.format(closed_total_qty, start_close, end_close),
     )
 
-    overdue_meetings_date_selected_df = overdue_meetings_date_selected_df.loc[overdue_meetings_date_selected_df['region_code'].isin(region_list_value) & overdue_meetings_date_selected_df['user_code'].isin(users_list_values)]
-    overdue_graph_data = functions_file.overdue_graph_prep(overdue_meetings_date_selected_df, include_zeros_checkbox_value)
+    overdue_meetings_date_selected_df = overdue_meetings_date_selected_df.loc[overdue_meetings_date_selected_df['region_code'].isin(region_list_value) & overdue_meetings_date_selected_df['user_code'].isin(users_list_values) & overdue_meetings_date_selected_df['Event_status'].isin([1,2])]
+
+    overdue_graph_data = functions_file.overdue_graph_prep(overdue_meetings_date_selected_df, include_zeros_checkbox_value)[0]
+    overdue_graph_user_data = functions_file.overdue_graph_prep(overdue_meetings_date_selected_df, include_zeros_checkbox_value)[1]
+    # overdue_graph_user_data.to_csv('Data/overdue_graph_user_data_delete.csv')
+    overdue_graph_user_fig = go.Figure()
+    overdue_graph_user_fig.add_trace(go.Bar(
+        x=overdue_graph_user_data['Overdue_qty'],
+        y=overdue_graph_user_data['Name'],
+
+        orientation='h'))
+    overdue_user_total_qty = int(overdue_graph_user_data['Overdue_qty'].sum())
+    start_overdue = start_date.strftime("%d.%m.%y")
+    overdue_end_open = overdue_date_finish.strftime("%d.%m.%y")
+    overdue_graph_user_fig.update_layout(
+        template='plotly_dark',
+        title='Просрочено: {}<br><sup>c {} по {}</sup> '.format(overdue_user_total_qty, start_overdue, overdue_end_open),
+    )
+
 
 
     overdue_graph_fig = go.Figure()
@@ -271,7 +289,7 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
 
 
 
-    return region_list_value, region_list_options, users_list_values, users_list_options, closed_graph_fig, planned_graph_fig, overdue_graph_fig, planned_by_users_graph_fig, closed_by_users_graph_fig
+    return region_list_value, region_list_options, users_list_values, users_list_options, closed_graph_fig, planned_graph_fig, overdue_graph_fig, planned_by_users_graph_fig, closed_by_users_graph_fig, overdue_graph_user_fig
 
 if __name__ == "__main__":
     app.run_server(debug=True)

@@ -107,6 +107,17 @@ def overdue_graph_prep(overdue_meetings_date_selected_df, include_zeros_checkbox
     # Выбираем строки в которых статус не равен "завершенный"
     #overdue_meetings_date_selected_df.to_csv('Data/overdue_before_selected_delete.csv')
     overdue_selected = overdue_meetings_date_selected_df.loc[overdue_meetings_date_selected_df['Event_status'].isin([1,2])]
+    overdue_df_groupped_by_users = overdue_selected.groupby(['Plan_date', 'user_code']).size().to_frame(
+        'size').reset_index()
+    overdue_df_groupped_by_users_sum = overdue_df_groupped_by_users.groupby(['user_code'], as_index=False)[
+        'size'].sum()
+    overdue_users_dist_graph_data_prep_df = pd.merge(overdue_df_groupped_by_users_sum, users_full, on='user_code',
+                                                    how='left')
+    overdue_users_dist_graph_data_prep_df.rename(columns={'size': 'Overdue_qty'}, inplace=True)
+    overdue_users_dist_graph_data_prep_df.fillna(0, inplace=True)
+    overdue_users_dist_graph_data_prep_df.sort_values(['Overdue_qty'], inplace=True)
+
+
 
     overdue_df_groupped_by_regions = overdue_selected.groupby(['Plan_date', 'region_code']).size().to_frame('size').reset_index()
     overdue_df_groupped_by_regions_sum = overdue_df_groupped_by_regions.groupby(['region_code'], as_index=False)['size'].sum()
@@ -122,7 +133,7 @@ def overdue_graph_prep(overdue_meetings_date_selected_df, include_zeros_checkbox
     else:
         oblast_dist_overdue_graph_data_df = overdue_oblast_dist_graph_data_prep_df_with_region_names.loc[
             overdue_oblast_dist_graph_data_prep_df_with_region_names['Overdue_qty'] > 0]
-    return oblast_dist_overdue_graph_data_df
+    return oblast_dist_overdue_graph_data_df, overdue_users_dist_graph_data_prep_df
 
 def cut_df_by_dates_interval(df, date_field_name, start_date, end_date):
     start_date = start_date
