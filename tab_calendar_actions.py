@@ -199,6 +199,30 @@ def calendar_actions():
                                                      ]
                                                      ),
                                          ]),
+                                         # dbc.Card(
+                                         #     [
+                                         #         dbc.CardHeader("Встреча ООО Конный завод Чесменский",
+                                         #                        className='card-header'),
+                                         #         dbc.CardBody([
+                                         #             html.P("текст card-title",
+                                         #                 className="card-title",
+                                         #                    ),
+                                         #             html.P("Встреча с клиентом. Сообщил, что 13 ноября собственник будет смотреть кормосмеситель, после чего будет принимать решение.",
+                                         #                 className="card-text", id='card_plan_fact_tab_plan_value'),
+                                         #         ]
+                                         #         ), ],
+                                         #
+                                         #     #color="dark", inverse=True
+                                         # className='card'),
+                                         html.Hr(className="hr"),
+                                         dbc.Row([
+                                             html.Div(
+                                                 children=[
+                                                     html.P("Встречи"),
+                                                     html.Div(id='meetings-data-table')
+                                                 ]
+                                             ),
+                                         ]),
                                      ])
                             ]),
             ])

@@ -1,49 +1,72 @@
 import pandas as pd
 import json
 import datetime
-# готовим events.csv
-events_df = pd.read_csv('Data/events_source.csv')
-event_status_dict = {"Активная": 1, "Активная просроченная": 2, "Завершенная": 3}
-# values - этол для функции fillna - показываем в каких колонках чем заполнить пустые ячейки. '01.01.1970' - будет указанием на то, что здесь было пусто
-values = {"Create_date": '01.01.1970', "Deadline_date": '01.01.1970', "Close_date": '01.01.1970', "Plan_date": '01.01.1970'}
+def prepare_events_csv():
+    # готовим events.csv
+    events_df = pd.read_csv('Data/events_source.csv')
+    event_status_dict = {"Активная": 1, "Активная просроченная": 2, "Завершенная": 3}
 
-# переименовываем заголовки колонок
-events_df = events_df.rename(columns={
-    "ID события":"event_id",
-    "Дата создания":"Create_date",
-    "Планирование":"Plan_date",
-    "Дата завершения":"Close_date",
+    # values - этол для функции fillna - показываем в каких колонках чем заполнить пустые ячейки. '01.01.1970' - будет указанием на то, что здесь было пусто
+    values = {"Create_date": '01.01.1970', "Deadline_date": '01.01.1970', "Close_date": '01.01.1970', "Plan_date": '01.01.1970'}
 
-    "Описание":"Description",
-    "Ответственный":"user_code",
-    "Завершить не позднее":"Deadline_date",
-    "Статус":"Event_status",
-    "ID клиента":"Customer_id",
-    "Область":"Oblast",
-    "ID сделки":"Deal_id",
-    "Комментарий при завершении":"Close_comment",
-})
-events_df.fillna(value=values, inplace=True)
-regions_df = pd.read_csv('Data/regions.csv')
+    # переименовываем заголовки колонок
+    events_df = events_df.rename(columns={
+        "ID события":"event_id",
+        "Дата создания":"Create_date",
+        "Планирование":"Plan_date",
+        "Дата завершения":"Close_date",
 
-# region_dict нужен для того чтобы вставить в таблицу event колонку с кодом региона. Аналог ВПР
-region_dict = {}
-for index, row in regions_df.iterrows():
-    region_dict[row['region_name']] = row['region_code']
+        "Описание":"Description",
+        "Ответственный":"user_code",
+        "Завершить не позднее":"Deadline_date",
+        "Статус":"Event_status",
+        "ID клиента":"Customer_id",
+        "Область":"Oblast",
+        "ID сделки":"Deal_id",
+        "Комментарий при завершении":"Close_comment",
+    })
+    events_df.fillna(value=values, inplace=True)
+    regions_df = pd.read_csv('Data/regions.csv')
 
-events_df['region_code'] = events_df['Oblast'].map(region_dict)
-events_df.fillna(value={"region_code": 0, 'Customer_id': -1, 'Deal_id': 0}, inplace=True)
-events_df = events_df.astype({"region_code": int, 'Customer_id': int, 'Deal_id': int})
-events_df_selected = events_df.loc[:, ['event_id', 'Create_date', 'Description', 'user_code', 'Deadline_date', 'Event_status', 'Close_date', 'Customer_id', 'Deal_id', 'Plan_date', 'region_code']]
-events_df_selected.replace({"Event_status": event_status_dict}, inplace=True)
-# конвертируем даты в даты
-# date_column_list = ['Create_date', 'Deadline_date', 'Close_date', 'Plan_date']
-# for date_column in date_column_list:
-#     events_df.loc[:, date_column] = pd.to_datetime(events_df[date_column], infer_datetime_format=True, format='%d.%m.%Y')
-#     events_df[date_column] = events_df[date_column].apply(lambda x: datetime.date(x.year, x.month, x.day))
+    # создаем линк на карточку встречи
+    main_domen = 'https://rb.bmtechnics.ru/#/'
+    url_content = 'planner/events?filter=%7B%22sort%22:%7B%22deadline%22:4%7D,%22where%22:%7B%22connected_approved%22:false,%22type%22:%7B%22task%22:true,%22meeting%22:true%7D,%22priority%22:%7B%22high%22:true,%22normal%22:true,%22low%22:true%7D,%22data%22:%7B%22type%22:%22plan%22%7D,%22relation_company%22:%7B%22with%22:true,%22without%22:true%7D,%22relation_deal%22:%7B%22with%22:true,%22without%22:true%7D,%22search%22:%22'
+    url_content_end = '%22%7D%7D'
 
-events_df_selected.to_csv('Data/events.csv')
+    events_df['event_url'] =  main_domen + url_content + events_df['event_id'].map(str) + url_content_end
 
+
+
+    # region_dict нужен для того чтобы вставить в таблицу event колонку с кодом региона. Аналог ВПР
+    region_dict = {}
+    for index, row in regions_df.iterrows():
+        region_dict[row['region_name']] = row['region_code']
+
+
+    events_df['region_code'] = events_df['Oblast'].map(region_dict)
+
+    events_df.fillna(value={"region_code": 0, 'Customer_id': -1, 'Deal_id': 0}, inplace=True)
+    events_df = events_df.astype({"region_code": int, 'Customer_id': int, 'Deal_id': int})
+    events_df_selected = events_df.loc[:, ['event_id', 'event_url', 'Create_date', 'Description', 'user_code', 'Deadline_date', 'Event_status', 'Close_date', 'Customer_id', 'Deal_id', 'Plan_date', 'region_code', 'Close_comment']]
+    events_df_selected.replace({"Event_status": event_status_dict}, inplace=True)
+    # конвертируем даты в даты
+    # date_column_list = ['Create_date', 'Deadline_date', 'Close_date', 'Plan_date']
+    # for date_column in date_column_list:
+    #     events_df.loc[:, date_column] = pd.to_datetime(events_df[date_column], infer_datetime_format=True, format='%d.%m.%Y')
+    #     events_df[date_column] = events_df[date_column].apply(lambda x: datetime.date(x.year, x.month, x.day))
+
+    events_df_selected.to_csv('Data/events.csv')
+def prepare_customers_csv():
+    companies_df = pd.read_csv('Data/companies.csv')
+    companies_df = companies_df.rename(columns={
+            "ID":"Customer_id",
+            "Наименование":"Customer_name",
+            "Область": "Region_name",
+        })
+    companies_selected_df = companies_df.loc[:, ['Customer_id', 'Customer_name', 'Region_name']]
+    companies_selected_df.to_csv('Data/companies_selected.csv')
+
+prepare_customers_csv()
 
 def region_checklist_data():
     # нам нужно получить уникальный список регионов, которые есть в выборке events

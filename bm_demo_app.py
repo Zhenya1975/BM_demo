@@ -94,6 +94,7 @@ event_df = functions_file.get_event_df()
     Output('open_meetings_user_distribution_graph', 'figure'),
     Output('closed_meetings_user_distribution_graph', 'figure'),
     Output('overdue_meetings_user_distribution_graph', 'figure'),
+    Output('meetings-data-table', 'children'),
    ],
 
     [
@@ -287,9 +288,64 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
         title='Просрочено: {}<br><sup>c {} по {}</sup> '.format(overdue_total_qty, start_overdue, overdue_end_open),
     )
 
+    # готовим таблицу с данными по встречам
+    # Завершенные встречи
+    # close_date_selected_df.to_csv('Data/close_date_selected_df_delete.csv')
+    users_df = pd.read_csv('Data/users.csv')
+    close_date_selected__with_names_df = pd.merge(close_date_selected_df, users_df, on='user_code', how='left')
+    customers_df = pd.read_csv('Data/companies_selected.csv')
+    close_date_selected__with_names_and_customers_df = pd.merge(close_date_selected__with_names_df, customers_df, on='Customer_id', how='left')
+
+    close_table_list = []
+    for index, row in close_date_selected__with_names_and_customers_df.iterrows():
+        temp_dict = {}
+        link_text = str(row['event_id']) + '. ' + str(row['Description'])
+
+        temp_dict['Описание'] = [html.A(html.P(link_text), href=row['event_url'], target="_blank")]
+        temp_dict['Клиент'] = row['Customer_name'] + ', ' + row['Region_name']
+        temp_dict['Ответственный'] = row['Name']
+        temp_dict['Статус встречи'] = "Завершена"
+        plan_date = row['Plan_date'].strftime("%d.%m.%Y")
+        if plan_date == '01.01.1970':
+            temp_dict['Дата планирования'] = '-'
+        else:
+            temp_dict['Дата планирования'] =plan_date
+        close_date = row['Close_date'].strftime("%d.%m.%Y")
+        temp_dict['Дата завершения'] = close_date
+
+        close_table_list.append(temp_dict)
+    print(close_table_list)
+    close_table_df = pd.DataFrame(close_table_list)
+
+    #close_table_df  = close_date_selected_df.loc[:, ['Create_date', 'Description', 'user_code', 'Customer_id', 'Deal_id', 'Plan_date', 'region_code', 'Close_comment', 'Event_status']]
+
+    # таблицу со встречами получаем в html.Div(id='meetings-data-table') На него ссылается в колбэке, ожидая от него children, то есть html
+
+    # переменная table_plan_output нужна для того, чтобы передаеть ее в return
+    # table_plan_output = html.Div([meetings_table])
 
 
-    return region_list_value, region_list_options, users_list_values, users_list_options, closed_graph_fig, planned_graph_fig, overdue_graph_fig, planned_by_users_graph_fig, closed_by_users_graph_fig, overdue_graph_user_fig
+    meetings_table = dbc.Table().from_dataframe(close_table_df, style={'color': 'white'})
+
+    ######################
+    ###############
+    #title = ['Hi Dash', 'Hello World']
+    #link = [html.A(html.P('Link'), href="https://yahoo.com", target="_blank"), html.A(html.P('Link'), href="google.com")]
+
+    # dictionary = {"title": title, "link": link}
+    # df = pd.DataFrame(dictionary)
+    #
+    # table = dbc.Table.from_dataframe(df,
+    #                                  #striped=True,
+    #                                  #bordered=True,
+    #                                  hover=True,
+    #                                  style={'color': 'white'})
+    table_plan_output = html.Div([meetings_table])
+    ################
+
+    #######################
+
+    return region_list_value, region_list_options, users_list_values, users_list_options, closed_graph_fig, planned_graph_fig, overdue_graph_fig, planned_by_users_graph_fig, closed_by_users_graph_fig, overdue_graph_user_fig, table_plan_output
 
 if __name__ == "__main__":
     app.run_server(debug=True)
