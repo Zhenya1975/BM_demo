@@ -290,13 +290,22 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
 
     # готовим таблицу с данными по встречам
     # Завершенные встречи
-    # close_date_selected_df.to_csv('Data/close_date_selected_df_delete.csv')
     users_df = pd.read_csv('Data/users.csv')
     close_date_selected__with_names_df = pd.merge(close_date_selected_df, users_df, on='user_code', how='left')
     customers_df = pd.read_csv('Data/companies_selected.csv')
     close_date_selected__with_names_and_customers_df = pd.merge(close_date_selected__with_names_df, customers_df, on='Customer_id', how='left')
 
-    close_table_list = []
+    # готовим таблицу с данными по встречам
+    # Запланированные встречи
+    plan_date_selected__with_names_df = pd.merge(plan_date_selected_df, users_df, on='user_code', how='left')
+    plan_date_selected__with_names_and_customers_df = pd.merge(plan_date_selected__with_names_df, customers_df,
+                                                                on='Customer_id', how='left')
+
+    overdue_date_selected__with_names_df = pd.merge(overdue_meetings_date_selected_df, users_df, on='user_code', how='left')
+    overdue_date_selected__with_names_and_customers_df = pd.merge(overdue_date_selected__with_names_df, customers_df,
+                                                               on='Customer_id', how='left')
+
+    event_table_list = []
     for index, row in close_date_selected__with_names_and_customers_df.iterrows():
         temp_dict = {}
         link_text = str(row['event_id']) + '. ' + str(row['Description'])
@@ -312,10 +321,55 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
             temp_dict['Дата планирования'] =plan_date
         close_date = row['Close_date'].strftime("%d.%m.%Y")
         temp_dict['Дата завершения'] = close_date
+        temp_dict['Комментарий при завершении'] = row['Close_comment']
 
-        close_table_list.append(temp_dict)
-    print(close_table_list)
-    close_table_df = pd.DataFrame(close_table_list)
+        event_table_list.append(temp_dict)
+
+    # заполняем данные для запланированных визитов
+    for index, row in plan_date_selected__with_names_and_customers_df.iterrows():
+        temp_dict = {}
+        link_text = str(row['event_id']) + '. ' + str(row['Description'])
+
+        temp_dict['Описание'] = [html.A(html.P(link_text), href=row['event_url'], target="_blank")]
+        temp_dict['Клиент'] = row['Customer_name'] + ', ' + row['Region_name']
+        temp_dict['Ответственный'] = row['Name']
+        temp_dict['Статус встречи'] = "Запланирована"
+        plan_date = row['Plan_date'].strftime("%d.%m.%Y")
+        if plan_date == '01.01.1970':
+            temp_dict['Дата планирования'] = '-'
+        else:
+            temp_dict['Дата планирования'] =plan_date
+        close_date = row['Close_date'].strftime("%d.%m.%Y")
+        temp_dict['Дата завершения'] = close_date
+        temp_dict['Комментарий при завершении'] = row['Close_comment']
+
+        event_table_list.append(temp_dict)
+
+        # заполняем данные для просроченных визитов
+        for index, row in overdue_date_selected__with_names_and_customers_df.iterrows():
+            temp_dict = {}
+            link_text = str(row['event_id']) + '. ' + str(row['Description'])
+
+            temp_dict['Описание'] = [html.A(html.P(link_text), href=row['event_url'], target="_blank")]
+            temp_dict['Клиент'] = str(row['Customer_name']) + ', ' + str(row['Region_name'])
+            temp_dict['Ответственный'] = row['Name']
+            temp_dict['Статус встречи'] = "Просрочена"
+            plan_date = row['Plan_date'].strftime("%d.%m.%Y")
+            if plan_date == '01.01.1970':
+                temp_dict['Дата планирования'] = '-'
+            else:
+                temp_dict['Дата планирования'] = plan_date
+            close_date = row['Close_date'].strftime("%d.%m.%Y")
+            if close_date == '01.01.1970':
+                temp_dict['Дата завершения'] = '-'
+            else:
+                temp_dict['Дата завершения'] = close_date
+
+            temp_dict['Комментарий при завершении'] = row['Close_comment']
+
+            event_table_list.append(temp_dict)
+
+    event_table_df = pd.DataFrame(event_table_list)
 
     #close_table_df  = close_date_selected_df.loc[:, ['Create_date', 'Description', 'user_code', 'Customer_id', 'Deal_id', 'Plan_date', 'region_code', 'Close_comment', 'Event_status']]
 
@@ -325,7 +379,7 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     # table_plan_output = html.Div([meetings_table])
 
 
-    meetings_table = dbc.Table().from_dataframe(close_table_df, style={'color': 'white'})
+    meetings_table = dbc.Table().from_dataframe(event_table_df, style={'color': 'white'})
 
     ######################
     ###############
