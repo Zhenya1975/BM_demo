@@ -224,6 +224,40 @@ def get_unique_users(planned_selections, closed_selections, overdue_selections, 
 
     return users_checklist_data, user_list_cut_by_regions
 
+def prepare_meetings_data(df, select_meeting_type):
+    """данные для построения таблицы со встречами"""
+    # сначала фильтруем строки из исходных таблиц
+    df_filtered = df.loc[df['Event_status'].isin(select_meeting_type)]
+    event_status_dict = {1: "Активная", 2: "Просроченная", 3: "Завершенная"}
+    df_filtered['status_name'] = df_filtered['Event_status'].map(event_status_dict)
+    event_table_list = []
+    for index, row in df_filtered.iterrows():
+        temp_dict = {}
+        link_text = str(row['event_id']) + '. ' + str(row['Description'])
+
+        temp_dict['Описание'] = [html.A(html.P(link_text), href=row['event_url'], target="_blank")]
+        temp_dict['Клиент'] = str(row['Customer_name']) + ', ' + str(row['Region_name'])
+        temp_dict['Ответственный'] = row['Name']
+        temp_dict['Статус встречи'] = row['status_name']
+        plan_date = row['Plan_date'].strftime("%d.%m.%Y")
+        if plan_date == '01.01.1970':
+            temp_dict['Дата планирования'] = '-'
+        else:
+            temp_dict['Дата планирования'] = plan_date
+        close_date = row['Close_date'].strftime("%d.%m.%Y")
+        temp_dict['Дата завершения'] = close_date
+        temp_dict['Комментарий при завершении'] = row['Close_comment']
+
+        event_table_list.append(temp_dict)
+
+    result_df = pd.DataFrame(event_table_list)
+
+
+    return result_df
+
+
+
+
 
 
 # в одной колонке - категория, в другой - количество встреч

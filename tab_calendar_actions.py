@@ -5,6 +5,7 @@ import dash_bootstrap_components as dbc
 import initial_values
 
 regions = initial_values.region_checklist_data()[0]
+
 regions_list = initial_values.region_checklist_data()[1]
 managers = initial_values.managers_checklist_data()
 
@@ -216,9 +217,27 @@ def calendar_actions():
                                          # className='card'),
                                          html.Hr(className="hr"),
                                          dbc.Row([
-                                             html.Div(
+                                             html.Div(style={'paddingRight': '10px', },
                                                  children=[
                                                      html.P("Встречи"),
+                                                 ]
+                                             ),
+
+                                                  dcc.Checklist(
+                                                      id='select_meeting_type',
+                                                      options=[{'label': ' Завершена  ', 'value': 3},
+                                                               {'label': ' Запланирована  ', 'value': 1},
+                                                               {'label': ' Просрочена  ', 'value': 2},
+                                                               ],
+                                                      value=[1,2,3],
+                                                      labelStyle=dict(display='inline')
+                                                  ),
+
+                                                  ]),
+                                         dbc.Row([
+                                             html.Div(style={'paddingRight': '10px',},
+                                                 children=[
+
                                                      html.Div(id='meetings-data-table')
                                                  ]
                                              ),

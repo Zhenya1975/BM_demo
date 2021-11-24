@@ -107,8 +107,10 @@ event_df = functions_file.get_event_df()
         Input('my-date-picker-range', 'start_date'),
         Input('my-date-picker-range', 'end_date'),
         Input('include_zeros_regions', 'value'),
+        Input('select_meeting_type', 'value'),
+
    ])
-def events_distribution(select_all_regions_button_tab_calendar_actions, release_all_regions_button_tab_calendar_action, regions_from_checklist, select_all_managers_button_tab_calendar_actions, release_all_regions_button_tab_calendar_actions, managers_from_checklist, start_date, end_date, include_zeros_checkbox_value):
+def events_distribution(select_all_regions_button_tab_calendar_actions, release_all_regions_button_tab_calendar_action, regions_from_checklist, select_all_managers_button_tab_calendar_actions, release_all_regions_button_tab_calendar_actions, managers_from_checklist, start_date, end_date, include_zeros_checkbox_value, select_meeting_type):
     # Готовим выборку из events в срезах Запланированные встречи, Завершенные встречи и Просроченные встречи
     start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
     end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d").date()
@@ -305,73 +307,12 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     overdue_date_selected__with_names_and_customers_df = pd.merge(overdue_date_selected__with_names_df, customers_df,
                                                                on='Customer_id', how='left')
 
-    event_table_list = []
-    for index, row in close_date_selected__with_names_and_customers_df.iterrows():
-        temp_dict = {}
-        link_text = str(row['event_id']) + '. ' + str(row['Description'])
+    # передаем в функцию создания данных таблицы список из фильтров и три таблицы с данными
+    close_df_selected_df = functions_file.prepare_meetings_data(close_date_selected__with_names_and_customers_df, select_meeting_type)
+    planned_df_selected_df = functions_file.prepare_meetings_data(plan_date_selected__with_names_and_customers_df, select_meeting_type)
+    overdue_df_selected_df = functions_file.prepare_meetings_data(overdue_date_selected__with_names_and_customers_df, select_meeting_type)
+    event_table_df = pd.concat([close_df_selected_df, planned_df_selected_df, overdue_df_selected_df], ignore_index=True)
 
-        temp_dict['Описание'] = [html.A(html.P(link_text), href=row['event_url'], target="_blank")]
-        temp_dict['Клиент'] = row['Customer_name'] + ', ' + row['Region_name']
-        temp_dict['Ответственный'] = row['Name']
-        temp_dict['Статус встречи'] = "Завершена"
-        plan_date = row['Plan_date'].strftime("%d.%m.%Y")
-        if plan_date == '01.01.1970':
-            temp_dict['Дата планирования'] = '-'
-        else:
-            temp_dict['Дата планирования'] =plan_date
-        close_date = row['Close_date'].strftime("%d.%m.%Y")
-        temp_dict['Дата завершения'] = close_date
-        temp_dict['Комментарий при завершении'] = row['Close_comment']
-
-        event_table_list.append(temp_dict)
-
-    # заполняем данные для запланированных визитов
-    for index, row in plan_date_selected__with_names_and_customers_df.iterrows():
-        temp_dict = {}
-        link_text = str(row['event_id']) + '. ' + str(row['Description'])
-
-        temp_dict['Описание'] = [html.A(html.P(link_text), href=row['event_url'], target="_blank")]
-        temp_dict['Клиент'] = row['Customer_name'] + ', ' + row['Region_name']
-        temp_dict['Ответственный'] = row['Name']
-        temp_dict['Статус встречи'] = "Запланирована"
-        plan_date = row['Plan_date'].strftime("%d.%m.%Y")
-        if plan_date == '01.01.1970':
-            temp_dict['Дата планирования'] = '-'
-        else:
-            temp_dict['Дата планирования'] =plan_date
-        close_date = row['Close_date'].strftime("%d.%m.%Y")
-        temp_dict['Дата завершения'] = close_date
-        temp_dict['Комментарий при завершении'] = row['Close_comment']
-
-        event_table_list.append(temp_dict)
-
-        # заполняем данные для просроченных визитов
-        for index, row in overdue_date_selected__with_names_and_customers_df.iterrows():
-            temp_dict = {}
-            link_text = str(row['event_id']) + '. ' + str(row['Description'])
-
-            temp_dict['Описание'] = [html.A(html.P(link_text), href=row['event_url'], target="_blank")]
-            temp_dict['Клиент'] = str(row['Customer_name']) + ', ' + str(row['Region_name'])
-            temp_dict['Ответственный'] = row['Name']
-            temp_dict['Статус встречи'] = "Просрочена"
-            plan_date = row['Plan_date'].strftime("%d.%m.%Y")
-            if plan_date == '01.01.1970':
-                temp_dict['Дата планирования'] = '-'
-            else:
-                temp_dict['Дата планирования'] = plan_date
-            close_date = row['Close_date'].strftime("%d.%m.%Y")
-            if close_date == '01.01.1970':
-                temp_dict['Дата завершения'] = '-'
-            else:
-                temp_dict['Дата завершения'] = close_date
-
-            temp_dict['Комментарий при завершении'] = row['Close_comment']
-
-            event_table_list.append(temp_dict)
-
-    event_table_df = pd.DataFrame(event_table_list)
-
-    #close_table_df  = close_date_selected_df.loc[:, ['Create_date', 'Description', 'user_code', 'Customer_id', 'Deal_id', 'Plan_date', 'region_code', 'Close_comment', 'Event_status']]
 
     # таблицу со встречами получаем в html.Div(id='meetings-data-table') На него ссылается в колбэке, ожидая от него children, то есть html
 
