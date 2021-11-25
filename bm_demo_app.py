@@ -12,6 +12,7 @@ import initial_values
 app = dash.Dash(__name__)
 app.title = " BM Demo dashboard"
 server = app.server
+mode = initial_values.mode
 
 body = html.Div([
     dbc.Container([
@@ -179,8 +180,6 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
 
 
 
-
-
     id_checklist_users = 'managers_selector_checklist_calendar_actions_tab'
     if id_checklist_users in changed_id:
         users_list_values = managers_from_checklist
@@ -308,7 +307,11 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     close_data_filtered_df = close_data.loc[close_data['region_code'].isin(region_list_value) & close_data['user_code'].isin(users_list_values)]
     close_date_selected__with_names_df = pd.merge(close_data_filtered_df, users_df, on='user_code', how='left')
 
-    customers_df = pd.read_csv('Data/companies_selected.csv')
+    if mode == 'demo':
+        customers_df = pd.read_csv('Data/companies_selected_demo.csv')
+    else:
+        customers_df = pd.read_csv('Data/companies_selected.csv')
+
     close_date_selected__with_names_and_customers_df = pd.merge(close_date_selected__with_names_df, customers_df, on='Customer_id', how='left')
 
     # готовим таблицу с данными по встречам
@@ -327,7 +330,7 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     closed_meeting_data_df = functions_file.prepare_meetings_data(close_date_selected__with_names_and_customers_df, select_meeting_type)
     planned_meeting_data_df = functions_file.prepare_meetings_data(plan_date_selected__with_names_and_customers_df, select_meeting_type)
     overdue_meeting_data_df = functions_file.prepare_meetings_data(overdue_date_selected__with_names_and_customers_df, select_meeting_type)
-    overdue_meeting_data_df.to_csv('Data/overdue_meeting_data_df_delete.csv')
+
 
     event_table_df = pd.concat([closed_meeting_data_df, planned_meeting_data_df, overdue_meeting_data_df], ignore_index=True)
 

@@ -1,9 +1,16 @@
 import pandas as pd
 import json
-import datetime
+
+#mode = 'actual'
+mode = 'demo'
+
 def prepare_events_csv():
     # готовим events.csv
-    events_df = pd.read_csv('Data/events_source.csv')
+    if mode == 'demo':
+        events_df = pd.read_csv('Data/events_demo_source.csv')
+    else:
+        events_df = pd.read_csv('Data/events_source.csv')
+
     event_status_dict = {"Активная": 1, "Активная просроченная": 2, "Завершенная": 3}
 
     # values - этол для функции fillna - показываем в каких колонках чем заполнить пустые ячейки. '01.01.1970' - будет указанием на то, что здесь было пусто
@@ -29,12 +36,18 @@ def prepare_events_csv():
     regions_df = pd.read_csv('Data/regions.csv')
 
     # создаем линк на карточку встречи
-    main_domen = 'https://rb.bmtechnics.ru/#/'
-    url_content = 'planner/events?filter=%7B%22sort%22:%7B%22deadline%22:4%7D,%22where%22:%7B%22connected_approved%22:false,%22type%22:%7B%22task%22:true,%22meeting%22:true%7D,%22priority%22:%7B%22high%22:true,%22normal%22:true,%22low%22:true%7D,%22data%22:%7B%22type%22:%22plan%22%7D,%22relation_company%22:%7B%22with%22:true,%22without%22:true%7D,%22relation_deal%22:%7B%22with%22:true,%22without%22:true%7D,%22search%22:%22'
-    url_content_end = '%22%7D%7D'
+    if mode == 'actual':
+        main_domen = 'https://rb.bmtechnics.ru/#/'
+        url_content = 'planner/events?filter=%7B%22sort%22:%7B%22deadline%22:4%7D,%22where%22:%7B%22connected_approved%22:false,%22type%22:%7B%22task%22:true,%22meeting%22:true%7D,%22priority%22:%7B%22high%22:true,%22normal%22:true,%22low%22:true%7D,%22data%22:%7B%22type%22:%22plan%22%7D,%22relation_company%22:%7B%22with%22:true,%22without%22:true%7D,%22relation_deal%22:%7B%22with%22:true,%22without%22:true%7D,%22search%22:%22'
+        url_content_end = '%22%7D%7D'
 
-    events_df['event_url'] =  main_domen + url_content + events_df['event_id'].map(str) + url_content_end
+        events_df['event_url'] =  main_domen + url_content + events_df['event_id'].map(str) + url_content_end
+    else:
+        main_domen = 'https://demo.redbridge-arm.com/#'
+        url_content = 'planner/events?filter=%7B%22sort%22:%7B%22deadline%22:4%7D,%22where%22:%7B%22connected_approved%22:false,%22type%22:%7B%22task%22:true,%22meeting%22:true%7D,%22priority%22:%7B%22high%22:true,%22normal%22:true,%22low%22:true%7D,%22data%22:%7B%22type%22:%22plan%22%7D,%22relation_company%22:%7B%22with%22:true,%22without%22:true%7D,%22relation_deal%22:%7B%22with%22:true,%22without%22:true%7D,%22search%22:%22'
+        url_content_end = '%22%7D%7D'
 
+        events_df['event_url'] = main_domen + url_content + str(13) + url_content_end
 
 
     # region_dict нужен для того чтобы вставить в таблицу event колонку с кодом региона. Аналог ВПР
@@ -56,6 +69,8 @@ def prepare_events_csv():
     #     events_df[date_column] = events_df[date_column].apply(lambda x: datetime.date(x.year, x.month, x.day))
 
     events_df_selected.to_csv('Data/events.csv')
+prepare_events_csv()
+
 def prepare_customers_csv():
     companies_df = pd.read_csv('Data/companies.csv')
     companies_df = companies_df.rename(columns={
@@ -66,7 +81,6 @@ def prepare_customers_csv():
     companies_selected_df = companies_df.loc[:, ['Customer_id', 'Customer_name', 'Region_name']]
     companies_selected_df.to_csv('Data/companies_selected.csv')
 
-prepare_customers_csv()
 
 def region_checklist_data():
     # нам нужно получить уникальный список регионов, которые есть в выборке events
@@ -109,14 +123,17 @@ def prepare_users_list():
         dict_temp['regions_list'] = user_region_list
         result_df_list.append(dict_temp)
     user_region_df = pd.DataFrame(result_df_list)
-    user_region_df.to_csv('Data/user_regions')
+    user_region_df.to_csv('Data/user_regions.csv')
 
     return list_of_unique_users
 
-#prepare_users_list()
+prepare_users_list()
 
 def get_users_regions_df():
-    users_regions_df= pd.read_csv('Data/user_regions')
+    if mode == 'actual':
+        users_regions_df= pd.read_csv('Data/user_regions.csv')
+    else:
+        users_regions_df = pd.read_csv('Data/user_regions_demo.csv')
     users_regions_df['regions_list'] = users_regions_df['regions_list'].apply(lambda x: json.loads(x))
     return users_regions_df
 #selected_regions = [36, 47]

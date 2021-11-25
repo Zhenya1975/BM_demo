@@ -9,7 +9,10 @@ import dash_bootstrap_components as dbc
 regions_list = pd.DataFrame(initial_values.region_checklist_data()[1], columns=['region_code'])
 regions = initial_values.region_checklist_data()[0]
 regions_full = pd.read_csv('Data/regions.csv')
-users_full = pd.read_csv('Data/users.csv')
+if initial_values.mode == 'demo':
+    users_full = pd.read_csv('Data/users_proto.csv')
+else:
+    users_full = pd.read_csv('Data/users.csv')
 
 def selectall_relese_all_buttons(id_select_all_button, id_release_all_button, options):
     """Обработчик Выбрать все / Снять выбор"""
