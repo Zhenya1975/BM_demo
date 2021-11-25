@@ -121,18 +121,26 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
 
     plan_date_selected_df = functions_file.cut_df_by_dates_interval(event_df, 'Plan_date', plan_date_start, end_date)
 
+    plan_data = plan_date_selected_df.copy()
+    plan_data.loc[:, 'Event_status'] = 1
+
     # здесь нам нужно получить список регионов и список options для чек-листа, которые попали в выборку по датам Плановой даты
     # отдаем plan_date_selected_df - получаем списки регионов и пользователей
-    planned_selections = functions_file.query_selections(plan_date_selected_df)
+    planned_selections = functions_file.query_selections(plan_data)
 
     # close_date_selected_df - это event_df обрезанный по датам завершения из прошлого до сегодня.
     close_date_selected_df = functions_file.cut_df_by_dates_interval(event_df, 'Close_date', start_date, close_date_finish)
-    closed_selections = functions_file.query_selections(close_date_selected_df)
+    close_data = close_date_selected_df.copy()
+    close_data.loc[:, 'Event_status'] = 3
+    closed_selections = functions_file.query_selections(close_data)
 
     # Просроченные встречи
     # режем диапазон дат. По полю "Plan_date"
     overdue_meetings_date_selected_df = functions_file.cut_df_by_dates_interval(event_df, 'Plan_date', start_date, overdue_date_finish)
-    overdue_selections = functions_file.query_selections(overdue_meetings_date_selected_df)
+    overdue_meetings_date_selected_df = overdue_meetings_date_selected_df.loc[overdue_meetings_date_selected_df['Close_date'] == datetime.datetime.strptime('1970-01-01', "%Y-%m-%d").date()]
+    overdue_data = overdue_meetings_date_selected_df.copy()
+    overdue_data.loc[:, 'Event_status'] = 2
+    overdue_selections = functions_file.query_selections(overdue_data)
 
     # Получаем уникальные списки регионов
     regions_data = functions_file.get_unique_region(planned_selections[0], closed_selections[0], overdue_selections[0])
@@ -187,6 +195,9 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
         users_list_values = []
 
     # список регионов для формирования графика
+
+
+
     plan_date_selected_with_regions_df = plan_date_selected_df.loc[plan_date_selected_df['region_code'].isin(region_list_value) & plan_date_selected_df['user_code'].isin(users_list_values)]
     planned_graph_data = functions_file.planned_graph_prep(plan_date_selected_with_regions_df, include_zeros_checkbox_value)[0]
     planned_graph_data_by_users = functions_file.planned_graph_prep(plan_date_selected_with_regions_df, include_zeros_checkbox_value)[1]
@@ -293,25 +304,32 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     # готовим таблицу с данными по встречам
     # Завершенные встречи
     users_df = pd.read_csv('Data/users.csv')
-    close_date_selected__with_names_df = pd.merge(close_date_selected_df, users_df, on='user_code', how='left')
+
+    close_data_filtered_df = close_data.loc[close_data['region_code'].isin(region_list_value) & close_data['user_code'].isin(users_list_values)]
+    close_date_selected__with_names_df = pd.merge(close_data_filtered_df, users_df, on='user_code', how='left')
+
     customers_df = pd.read_csv('Data/companies_selected.csv')
     close_date_selected__with_names_and_customers_df = pd.merge(close_date_selected__with_names_df, customers_df, on='Customer_id', how='left')
 
     # готовим таблицу с данными по встречам
     # Запланированные встречи
-    plan_date_selected__with_names_df = pd.merge(plan_date_selected_df, users_df, on='user_code', how='left')
+    planned_data_filtered_df = plan_data.loc[plan_data['region_code'].isin(region_list_value) & plan_data['user_code'].isin(users_list_values)]
+    plan_date_selected__with_names_df = pd.merge(planned_data_filtered_df, users_df, on='user_code', how='left')
     plan_date_selected__with_names_and_customers_df = pd.merge(plan_date_selected__with_names_df, customers_df,
                                                                 on='Customer_id', how='left')
 
-    overdue_date_selected__with_names_df = pd.merge(overdue_meetings_date_selected_df, users_df, on='user_code', how='left')
+    overdue_data_filtered_df = overdue_data.loc[overdue_data['region_code'].isin(region_list_value) & overdue_data['user_code'].isin(users_list_values)]
+    overdue_date_selected__with_names_df = pd.merge(overdue_data_filtered_df, users_df, on='user_code', how='left')
     overdue_date_selected__with_names_and_customers_df = pd.merge(overdue_date_selected__with_names_df, customers_df,
                                                                on='Customer_id', how='left')
 
     # передаем в функцию создания данных таблицы список из фильтров и три таблицы с данными
-    close_df_selected_df = functions_file.prepare_meetings_data(close_date_selected__with_names_and_customers_df, select_meeting_type)
-    planned_df_selected_df = functions_file.prepare_meetings_data(plan_date_selected__with_names_and_customers_df, select_meeting_type)
-    overdue_df_selected_df = functions_file.prepare_meetings_data(overdue_date_selected__with_names_and_customers_df, select_meeting_type)
-    event_table_df = pd.concat([close_df_selected_df, planned_df_selected_df, overdue_df_selected_df], ignore_index=True)
+    closed_meeting_data_df = functions_file.prepare_meetings_data(close_date_selected__with_names_and_customers_df, select_meeting_type)
+    planned_meeting_data_df = functions_file.prepare_meetings_data(plan_date_selected__with_names_and_customers_df, select_meeting_type)
+    overdue_meeting_data_df = functions_file.prepare_meetings_data(overdue_date_selected__with_names_and_customers_df, select_meeting_type)
+    overdue_meeting_data_df.to_csv('Data/overdue_meeting_data_df_delete.csv')
+
+    event_table_df = pd.concat([closed_meeting_data_df, planned_meeting_data_df, overdue_meeting_data_df], ignore_index=True)
 
 
     # таблицу со встречами получаем в html.Div(id='meetings-data-table') На него ссылается в колбэке, ожидая от него children, то есть html

@@ -228,7 +228,7 @@ def prepare_meetings_data(df, select_meeting_type):
     """данные для построения таблицы со встречами"""
     # сначала фильтруем строки из исходных таблиц
     df_filtered = df.loc[df['Event_status'].isin(select_meeting_type)]
-    event_status_dict = {1: "Активная", 2: "Просроченная", 3: "Завершенная"}
+    event_status_dict = {1: "Запланирована", 2: "Просрочена", 3: "Завершена"}
     df_filtered['status_name'] = df_filtered['Event_status'].map(event_status_dict)
     event_table_list = []
     for index, row in df_filtered.iterrows():
@@ -241,12 +241,18 @@ def prepare_meetings_data(df, select_meeting_type):
         temp_dict['Статус встречи'] = row['status_name']
         plan_date = row['Plan_date'].strftime("%d.%m.%Y")
         if plan_date == '01.01.1970':
-            temp_dict['Дата планирования'] = '-'
+            temp_dict['Дата планирования'] = ' '
         else:
             temp_dict['Дата планирования'] = plan_date
         close_date = row['Close_date'].strftime("%d.%m.%Y")
-        temp_dict['Дата завершения'] = close_date
+        if close_date == '01.01.1970':
+            temp_dict['Дата завершения'] = ' '
+        else:
+            temp_dict['Дата завершения'] = close_date
+
         temp_dict['Комментарий при завершении'] = row['Close_comment']
+
+
 
         event_table_list.append(temp_dict)
 
