@@ -63,23 +63,8 @@ def data(start_date, end_date):
     # more generally, this line would be
     # json.dumps(cleaned_df)
     return output_data
-# попробуем получить через dcc.Store
 
 
-
-# обработчик кнопок Снять все/Выбрать
-# @app.callback(
-#     Output("region_selector_checklist_calendar_actions_tab", "value"),
-#     #Output("region_selector_checklist_calendar_actions_tab", "options"),
-#     [Input('select_all_regions_button_tab_calendar_actions', 'n_clicks'),
-#      Input('release_all_regions_button_tab_calendar_actions', 'n_clicks')],
-#     [State("region_selector_checklist_calendar_actions_tab", "options")],
-# )
-# def button_regions_callback_func(select_all_regions_button_tab_calendar_actions, release_all_regions_button_tab_calendar_action, options):
-#     full_list = functions_file.selectall_relese_all_buttons('select_all_regions_button_tab_calendar_actions',
-#                                                             'release_all_regions_button_tab_calendar_action', options)
-#
-#     return full_list
 
 # получаем датафрейм со встречами
 event_df = functions_file.get_event_df()
@@ -122,6 +107,8 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
 
     plan_date_selected_df = functions_file.cut_df_by_dates_interval(event_df, 'Plan_date', plan_date_start, end_date)
 
+
+
     plan_data = plan_date_selected_df.copy()
     plan_data.loc[:, 'Event_status'] = 1
 
@@ -134,6 +121,7 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     close_data = close_date_selected_df.copy()
     close_data.loc[:, 'Event_status'] = 3
     closed_selections = functions_file.query_selections(close_data)
+
 
     # Просроченные встречи
     # режем диапазон дат. По полю "Plan_date"
@@ -149,7 +137,7 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     regions_list = regions_data[1]
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
 
-
+    # первоначально загружаем полный список регионов. Если кликнули в список регионов, то список регионов равен тому, что кликнули
     if regions_from_checklist:
         region_list_value = regions_from_checklist
     else:
@@ -173,6 +161,7 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
         region_list_value = []
 
     ################# блок получения данных для чек-листа пользователей ################
+
     users_data = functions_file.get_unique_users(planned_selections[1], closed_selections[1], overdue_selections[1],
                                                  region_list_value, managers_from_checklist)
     users_list_options = users_data[0]
@@ -194,10 +183,8 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
         users_list_values = []
 
     # список регионов для формирования графика
-
-
-
     plan_date_selected_with_regions_df = plan_date_selected_df.loc[plan_date_selected_df['region_code'].isin(region_list_value) & plan_date_selected_df['user_code'].isin(users_list_values)]
+
     planned_graph_data = functions_file.planned_graph_prep(plan_date_selected_with_regions_df, include_zeros_checkbox_value)[0]
     planned_graph_data_by_users = functions_file.planned_graph_prep(plan_date_selected_with_regions_df, include_zeros_checkbox_value)[1]
     #  общее количество Запланировано. Для вывода в заголовок графика
@@ -231,7 +218,9 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     )
 
     close_date_selected_df = close_date_selected_df.loc[close_date_selected_df['region_code'].isin(region_list_value) & close_date_selected_df['user_code'].isin(users_list_values)]
+
     closed_graph_data = functions_file.closed_graph_prep(close_date_selected_df, include_zeros_checkbox_value)[0]
+    closed_graph_data.to_csv('Data/closed_graph_data_delete.csv')
     closed_graph_data_by_users = functions_file.closed_graph_prep(close_date_selected_df, include_zeros_checkbox_value)[1]
     ############### график закрытых ивентов по юзерам ################
     #  общее количество Запланировано. Для вывода в заголовок графика
@@ -250,9 +239,6 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     )
 
 
-
-
-
     closed_total_qty = int(closed_graph_data['Closed_qty'].sum())
     closed_graph_fig = go.Figure()
     closed_graph_fig.add_trace(go.Bar(
@@ -269,7 +255,7 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
 
     overdue_graph_data = functions_file.overdue_graph_prep(overdue_meetings_date_selected_df, include_zeros_checkbox_value)[0]
     overdue_graph_user_data = functions_file.overdue_graph_prep(overdue_meetings_date_selected_df, include_zeros_checkbox_value)[1]
-    # overdue_graph_user_data.to_csv('Data/overdue_graph_user_data_delete.csv')
+
     overdue_graph_user_fig = go.Figure()
     overdue_graph_user_fig.add_trace(go.Bar(
         x=overdue_graph_user_data['Overdue_qty'],

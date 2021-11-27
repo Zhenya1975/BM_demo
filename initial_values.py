@@ -1,8 +1,8 @@
 import pandas as pd
 import json
 
-#mode = 'actual'
-mode = 'demo'
+mode = 'actual'
+#mode = 'demo'
 
 def prepare_events_csv():
     # готовим events.csv
@@ -33,6 +33,8 @@ def prepare_events_csv():
         "Комментарий при завершении":"Close_comment",
     })
     events_df.fillna(value=values, inplace=True)
+
+    events_df.dropna(subset=['user_code'], inplace=True)
     regions_df = pd.read_csv('Data/regions.csv')
 
     # создаем линк на карточку встречи
@@ -72,7 +74,7 @@ def prepare_events_csv():
 prepare_events_csv()
 
 def prepare_customers_csv():
-    companies_df = pd.read_csv('Data/companies.csv')
+    companies_df = pd.read_csv('Data/companies_source.csv')
     companies_df = companies_df.rename(columns={
             "ID":"Customer_id",
             "Наименование":"Customer_name",
@@ -80,19 +82,18 @@ def prepare_customers_csv():
         })
     companies_selected_df = companies_df.loc[:, ['Customer_id', 'Customer_name', 'Region_name']]
     companies_selected_df.to_csv('Data/companies_selected.csv')
-
+prepare_customers_csv()
 
 def region_checklist_data():
     # нам нужно получить уникальный список регионов, которые есть в выборке events
     events = pd.read_csv('Data/events.csv')
     region_codes_from_events = pd.DataFrame(events['region_code'].unique(), columns=['region_code'])
-    #print(region_codes_from_events)
+
     regions_df = pd.read_csv('Data/regions.csv')
     # лефт джойном получаем коды и имена регионов
     regions_df = pd.merge(region_codes_from_events, regions_df, on='region_code', how='left')
     regions_df_actual = regions_df.loc[ 1:,:]
-    #print(regions_df_actual)
-    #print(regions_df)
+
     region_checklist_data = []
     region_list = []
     for index, row in regions_df_actual.iterrows():
@@ -102,25 +103,38 @@ def region_checklist_data():
         region_checklist_data.append(dict_temp)
         region_list.append(row['region_code'])
     return region_checklist_data, region_list
-#print(region_checklist_data()[0])
+
 
 #  собираем данные о менеджеерах и регионах из events
 def prepare_users_list():
     events_df = pd.read_csv('Data/events.csv')
     list_of_users = events_df.loc[:, ['user_code']]
+    # list_of_unique_users - список уникальных пользователей в таблице встреч
     list_of_unique_users = pd.DataFrame(list_of_users['user_code'].unique(), columns=['user_code'])
+
     result_df_list = []
+    # итерируемся по списку уникальных пользователей
     for index, row_user_code in list_of_unique_users.iterrows():
         dict_temp = {}
         user_code = row_user_code['user_code']
+        # temp_df - выборка из таблицы встреч по текущенму юзеру в цикле
         temp_df = events_df.loc[events_df['user_code']==user_code]
         user_region_list = []
+        # итерируемся по полученной выборке и собираем все регионы, которые нам попадутся
         for index, row_events_selection in temp_df.iterrows():
             region_code = row_events_selection['region_code']
-            if region_code !=0 and region_code not in user_region_list:
+            #if region_code !=0 and region_code not in user_region_list:
+            if region_code not in user_region_list:
                 user_region_list.append(region_code)
-        dict_temp['user_code'] = user_code
-        dict_temp['regions_list'] = user_region_list
+
+        # Проверяем. Если список регионов у юзера пустой, то даем ему регион с кодом ноль
+        if len(user_region_list) == 0:
+            dict_temp['user_code'] = user_code
+            dict_temp['regions_list'] = 0
+        else:
+            dict_temp['user_code'] = user_code
+            dict_temp['regions_list'] = user_region_list
+        # добавляем пользователя в список
         result_df_list.append(dict_temp)
     user_region_df = pd.DataFrame(result_df_list)
     user_region_df.to_csv('Data/user_regions.csv')
@@ -129,28 +143,68 @@ def prepare_users_list():
 
 prepare_users_list()
 
+
 def get_users_regions_df():
     if mode == 'actual':
         users_regions_df= pd.read_csv('Data/user_regions.csv')
     else:
         users_regions_df = pd.read_csv('Data/user_regions_demo.csv')
+    # из СSV список делаем списком
     users_regions_df['regions_list'] = users_regions_df['regions_list'].apply(lambda x: json.loads(x))
+
     return users_regions_df
-#selected_regions = [36, 47]
-#selected_user_region_list = test_df['regions_list'][5]
+
 
 def check_user_in_region(a, b):
   return not set(a).isdisjoint(b)
 
-def filter_users_by_regions(user_list, selected_region_list):
-    users_regions_df = get_users_regions_df()
+# def filter_users_by_regions(user_list, selected_region_list):
+#     users_regions_df = get_users_regions_df()
+#
+#     user_list = user_list
 
-    user_list = user_list
 
+# готовим полный список пользователей
+def full_users_list_prepare():
+    companies_df = pd.read_csv('Data/companies_source.csv')
+    users_data_df = companies_df.loc[:, ['Ответственный менеджер', 'ФИО инициалы']]
+    users_from_events = pd.read_csv('Data/user_regions.csv')
+    result_list = []
+    list_of_user_codes = []
+    users_data_df.dropna(subset=['ФИО инициалы'], inplace=True)
+    for index, row in companies_df.iterrows():
+        temp_dict = {}
+        try:
+            name = row['Ответственный менеджер'].split(',')[0]
+            position = row['Ответственный менеджер'].split(',')[1]
+        except:
+            name = row['Ответственный менеджер']
+            position = ''
+        user_code = row['ФИО инициалы']
+        temp_dict['user_code'] = user_code
+        temp_dict['Name'] = name
+        temp_dict['Position'] = position
+        if user_code not in list_of_user_codes:
+            list_of_user_codes.append(user_code )
+            result_list.append(temp_dict)
+    # Снвала мы получили данные из списка клиентов. теперь поппробуем добавить в этот список тех, кто есть в списке встреч
+    for index, row in users_from_events.iterrows():
 
+        user_code_from_events = row['user_code']
 
-#print(func(selected_regions, selected_user_region_list))
-# готовим список пользователей
+        if user_code_from_events not in list_of_user_codes:
+
+            temp_dict_1 = {}
+            temp_dict_1['user_code'] = user_code_from_events
+            temp_dict_1['Name'] = user_code_from_events
+            temp_dict_1['Position'] = ''
+            result_list.append(temp_dict_1)
+    full_user_list_df = pd.DataFrame(result_list)
+    #full_user_list_df.dropna(inplace=True)
+    full_user_list_df.to_csv('Data/users.csv')
+
+full_users_list_prepare()
+# готовим чек-лист пользователей
 users_df = pd.read_csv('Data/users.csv')
 def managers_checklist_data():
     managers_checklist_data = []

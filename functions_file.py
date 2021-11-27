@@ -44,7 +44,7 @@ def get_event_df():
     return events_df
 region_list_names = pd.read_csv('Data/regions.csv')
 def planned_graph_prep(planned_df, include_zeros_checkbox_value):
-
+    """данные для графика запланированных встреч по регионам"""
     planned_df_groupped_by_users = planned_df.groupby(['Plan_date', 'user_code']).size().to_frame('size').reset_index()
     planned_df_groupped_by_users_sum = planned_df_groupped_by_users.groupby(['user_code'], as_index=False)[
         'size'].sum()
@@ -61,7 +61,7 @@ def planned_graph_prep(planned_df, include_zeros_checkbox_value):
         'size'].sum()
 
     # planned_oblast_dist_graph_data_prep_df - это список - области  - запланированные встречи
-    planned_oblast_dist_graph_data_prep_df = pd.merge(regions_list, planned_df_groupped_by_regions_sum, on='region_code',
+    planned_oblast_dist_graph_data_prep_df = pd.merge(planned_df_groupped_by_regions_sum, regions_list, on='region_code',
                                                       how='left')
     planned_oblast_dist_graph_data_prep_df.rename(columns={'size': 'Planned_qty'}, inplace=True)
     planned_oblast_dist_graph_data_prep_df.fillna(0, inplace=True)
@@ -78,8 +78,11 @@ def planned_graph_prep(planned_df, include_zeros_checkbox_value):
     return oblast_dist_prep_graph_data_df, planned_users_dist_graph_data_prep_df
 
 def closed_graph_prep(closed_df, include_zeros_checkbox_value):
-    # готовим данные для завершенных ивентов по юзерам
+    """подготовка данных для графика завершенных встреч. [0] отдает по регионам, [1] отдает по юзерам"""
+
+    # На вход получили closed_df - это выборка из events по дате заверщения
     closed_df_groupped_by_users = closed_df.groupby(['Close_date', 'user_code']).size().to_frame('size').reset_index()
+    closed_df_groupped_by_users.to_csv('Data/closed_df_groupped_by_users_delete.csv')
     closed_df_groupped_by_users_sum = closed_df_groupped_by_users.groupby(['user_code'], as_index=False)['size'].sum()
     closed_users_dist_graph_data_prep_df = pd.merge(closed_df_groupped_by_users_sum, users_full, on='user_code', how='left')
     closed_users_dist_graph_data_prep_df.rename(columns={'size': 'Closed_qty'}, inplace=True)
@@ -88,10 +91,14 @@ def closed_graph_prep(closed_df, include_zeros_checkbox_value):
 
     # готовим данные для завершенных ивентов по регионам
     closed_df_groupped_by_regions = closed_df.groupby(['Close_date', 'region_code']).size().to_frame('size').reset_index()
+
     closed_df_groupped_by_regions_sum = closed_df_groupped_by_regions.groupby(['region_code'], as_index=False)['size'].sum()
-    closed_oblast_dist_graph_data_prep_df = pd.merge(regions_list, closed_df_groupped_by_regions_sum, on='region_code',
+
+    closed_oblast_dist_graph_data_prep_df = pd.merge(closed_df_groupped_by_regions_sum, regions_list, on='region_code',
                                                      how='left')
+
     closed_oblast_dist_graph_data_prep_df.rename(columns={'size': 'Closed_qty'}, inplace=True)
+
     closed_oblast_dist_graph_data_prep_df.fillna(0, inplace=True)
     closed_oblast_dist_graph_data_prep_df.sort_values(['Closed_qty'], inplace=True)
     closed_oblast_dist_graph_data_prep_df_with_region_names = pd.merge(closed_oblast_dist_graph_data_prep_df,
@@ -149,7 +156,8 @@ def cut_df_by_dates_interval(df, date_field_name, start_date, end_date):
 
 def query_selections(df):
     """query_selections - это выборки списков кодов регионов и пользователей"""
-    events_df_temp = df.loc[df['region_code']>0]
+    # events_df_temp = df.loc[df['region_code']>0]
+    events_df_temp = df
     region_code_full_list = events_df_temp['region_code']
     region_code_unique = pd.DataFrame(region_code_full_list.unique(), columns=['region_code'])
 
@@ -159,9 +167,8 @@ def query_selections(df):
     return region_code_unique, users_unique
 
 def get_unique_region(planned_selections, closed_selections, overdue_selections):
-    """получаем данные для чек-боксов пользователей"""
+    """получаем данные для чек-боксов регионов"""
     # склеиваем списки регионов
-
     region_list_planned = planned_selections['region_code']
     region_list_closed = closed_selections['region_code']
     region_list_overdue = overdue_selections['region_code']
@@ -194,13 +201,15 @@ def get_unique_users(planned_selections, closed_selections, overdue_selections, 
 
     # users_regions_df - код юзера - список регионов
     users_regions_df = initial_values.get_users_regions_df()
-    #print('managers_from_checklist: ', managers_from_checklist)
+
+
     # region_list - список регионов, выбранных в фильтрах.
 
     region_list = region_list_value
 
     # нужно ответить на вопрос есть ли юзеры в списке users_unique_list в выбранных регионах
     # джойним users_unique_list с users_regions_df
+
     users_unique_list_with_regions = pd.merge(users_unique_list, users_regions_df, on='user_code', how='left')
 
     user_list_cut_by_regions = []
@@ -211,11 +220,12 @@ def get_unique_users(planned_selections, closed_selections, overdue_selections, 
             user_list_cut_by_regions.append(row['user_code'])
 
 
-
     user_list_cut_by_regions_df = pd.DataFrame(user_list_cut_by_regions, columns=['user_code'])
 
     users_with_names = pd.merge(user_list_cut_by_regions_df, users_full, on='user_code', how='left')
+
     users_with_names.sort_values('Name', inplace=True)
+
     users_checklist_data = []
     users_list = []
     for index, row in users_with_names.iterrows():
