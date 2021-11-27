@@ -220,7 +220,7 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     close_date_selected_df = close_date_selected_df.loc[close_date_selected_df['region_code'].isin(region_list_value) & close_date_selected_df['user_code'].isin(users_list_values)]
 
     closed_graph_data = functions_file.closed_graph_prep(close_date_selected_df, include_zeros_checkbox_value)[0]
-    closed_graph_data.to_csv('Data/closed_graph_data_delete.csv')
+
     closed_graph_data_by_users = functions_file.closed_graph_prep(close_date_selected_df, include_zeros_checkbox_value)[1]
     ############### график закрытых ивентов по юзерам ################
     #  общее количество Запланировано. Для вывода в заголовок графика

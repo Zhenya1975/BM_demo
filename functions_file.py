@@ -82,7 +82,7 @@ def closed_graph_prep(closed_df, include_zeros_checkbox_value):
 
     # На вход получили closed_df - это выборка из events по дате заверщения
     closed_df_groupped_by_users = closed_df.groupby(['Close_date', 'user_code']).size().to_frame('size').reset_index()
-    closed_df_groupped_by_users.to_csv('Data/closed_df_groupped_by_users_delete.csv')
+
     closed_df_groupped_by_users_sum = closed_df_groupped_by_users.groupby(['user_code'], as_index=False)['size'].sum()
     closed_users_dist_graph_data_prep_df = pd.merge(closed_df_groupped_by_users_sum, users_full, on='user_code', how='left')
     closed_users_dist_graph_data_prep_df.rename(columns={'size': 'Closed_qty'}, inplace=True)
