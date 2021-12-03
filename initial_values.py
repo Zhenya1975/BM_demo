@@ -1,8 +1,8 @@
 import pandas as pd
 import json
 
-mode = 'actual'
-#mode = 'demo'
+# mode = 'actual'
+mode = 'demo'
 
 def prepare_events_csv():
     # готовим events.csv
@@ -165,45 +165,48 @@ def check_user_in_region(a, b):
 
 
 # готовим полный список пользователей
-def full_users_list_prepare():
-    companies_df = pd.read_csv('Data/companies_source.csv')
-    users_data_df = companies_df.loc[:, ['Ответственный менеджер', 'ФИО инициалы']]
-    users_from_events = pd.read_csv('Data/user_regions.csv')
-    result_list = []
-    list_of_user_codes = []
-    users_data_df.dropna(subset=['ФИО инициалы'], inplace=True)
-    for index, row in companies_df.iterrows():
-        temp_dict = {}
-        try:
-            name = row['Ответственный менеджер'].split(',')[0]
-            position = row['Ответственный менеджер'].split(',')[1]
-        except:
-            name = row['Ответственный менеджер']
-            position = ''
-        user_code = row['ФИО инициалы']
-        temp_dict['user_code'] = user_code
-        temp_dict['Name'] = name
-        temp_dict['Position'] = position
-        if user_code not in list_of_user_codes:
-            list_of_user_codes.append(user_code )
-            result_list.append(temp_dict)
-    # Снвала мы получили данные из списка клиентов. теперь поппробуем добавить в этот список тех, кто есть в списке встреч
-    for index, row in users_from_events.iterrows():
-
-        user_code_from_events = row['user_code']
-
-        if user_code_from_events not in list_of_user_codes:
-
-            temp_dict_1 = {}
-            temp_dict_1['user_code'] = user_code_from_events
-            temp_dict_1['Name'] = user_code_from_events
-            temp_dict_1['Position'] = ''
-            result_list.append(temp_dict_1)
-    full_user_list_df = pd.DataFrame(result_list)
-    #full_user_list_df.dropna(inplace=True)
-    full_user_list_df.to_csv('Data/users.csv')
-
-full_users_list_prepare()
+# def full_users_list_prepare():
+#     companies_df = pd.read_csv('Data/companies_source.csv')
+#     users_data_df = companies_df.loc[:, ['Ответственный менеджер', 'ФИО инициалы']]
+#     users_from_events = pd.read_csv('Data/user_regions.csv')
+#     result_list = []
+#     list_of_user_codes = []
+#     users_data_df.dropna(subset=['ФИО инициалы'], inplace=True)
+#     users_data_df.to_csv('Data/users_data_df_delete.csv')
+#
+#
+#     for index, row in companies_df.iterrows():
+#         temp_dict = {}
+#         try:
+#             name = row['Ответственный менеджер'].split(',')[0]
+#             position = row['Ответственный менеджер'].split(',')[1]
+#         except:
+#             name = row['Ответственный менеджер']
+#             position = ''
+#         user_code = row['ФИО инициалы']
+#         temp_dict['user_code'] = user_code
+#         temp_dict['Name'] = name
+#         temp_dict['Position'] = position
+#         if user_code not in list_of_user_codes:
+#             list_of_user_codes.append(user_code )
+#             result_list.append(temp_dict)
+#     # Снвала мы получили данные из списка клиентов. теперь поппробуем добавить в этот список тех, кто есть в списке встреч
+#     for index, row in users_from_events.iterrows():
+#
+#         user_code_from_events = row['user_code']
+#
+#         if user_code_from_events not in list_of_user_codes:
+#
+#             temp_dict_1 = {}
+#             temp_dict_1['user_code'] = user_code_from_events
+#             temp_dict_1['Name'] = user_code_from_events
+#             temp_dict_1['Position'] = ''
+#             result_list.append(temp_dict_1)
+#     full_user_list_df = pd.DataFrame(result_list)
+#     #full_user_list_df.dropna(inplace=True)
+#     full_user_list_df.to_csv('Data/users.csv')
+#
+# full_users_list_prepare()
 # готовим чек-лист пользователей
 users_df = pd.read_csv('Data/users.csv')
 def managers_checklist_data():

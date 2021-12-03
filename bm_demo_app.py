@@ -33,7 +33,7 @@ body = html.Div([
                 className='custom-tabs-container',
                 children=[
                     tab_calendar_actions.calendar_actions(),
-                    #tab_settings.tab_settings(),
+                    tab_settings.tab_settings(),
                     # tab2(),
                     # tab3(),
                 ]
@@ -288,7 +288,12 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
 
     # готовим таблицу с данными по встречам
     # Завершенные встречи
-    users_df = pd.read_csv('Data/users.csv')
+    if mode == 'demo':
+        users_df = pd.read_csv('Data/users_proto.csv')
+    else:
+        users_df = pd.read_csv('Data/users.csv')
+
+
 
     close_data_filtered_df = close_data.loc[close_data['region_code'].isin(region_list_value) & close_data['user_code'].isin(users_list_values)]
     close_date_selected__with_names_df = pd.merge(close_data_filtered_df, users_df, on='user_code', how='left')

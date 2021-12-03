@@ -11,17 +11,18 @@ def tab_settings():
             dbc.Col(
                 #width=3,
                 children=[
-                    html.P('Фильтр по регионам'),
-                    dcc.RadioItems(
-                        id = 'region_view_selector',
-                        options=[
-                            {'label': ' Мультиселект', 'value': 'region_multiselect'},
-                            {'label': ' Список чек-боксов', 'value': 'region_checklist'},
-                        ],
-                        value='region_multiselect',
-                        labelStyle=dict(display='block'),
 
-                    ),
+                    # html.P('Фильтр по регионам'),
+                    # dcc.RadioItems(
+                    #     id = 'region_view_selector',
+                    #     options=[
+                    #         {'label': ' Мультиселект', 'value': 'region_multiselect'},
+                    #         {'label': ' Список чек-боксов', 'value': 'region_checklist'},
+                    #     ],
+                    #     value='region_multiselect',
+                    #     labelStyle=dict(display='block'),
+                    #
+                    # ),
                 ]
 
 
