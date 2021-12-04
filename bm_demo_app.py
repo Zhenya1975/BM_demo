@@ -6,6 +6,7 @@ import pandas as pd
 import functions_file
 import plotly.graph_objects as go
 import tab_calendar_actions
+import tab_plan_fact
 import tab_settings
 import initial_values
 #app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -33,6 +34,7 @@ body = html.Div([
                 className='custom-tabs-container',
                 children=[
                     tab_calendar_actions.calendar_actions(),
+                    tab_plan_fact.tab_plan_fact(),
                     tab_settings.tab_settings(),
                     # tab2(),
                     # tab3(),
@@ -348,11 +350,31 @@ def events_distribution(select_all_regions_button_tab_calendar_actions, release_
     #                                  hover=True,
     #                                  style={'color': 'white'})
     table_plan_output = html.Div([meetings_table])
-    ################
 
-    #######################
 
     return region_list_value, region_list_options, users_list_values, users_list_options, closed_graph_fig, planned_graph_fig, overdue_graph_fig, planned_by_users_graph_fig, closed_by_users_graph_fig, overdue_graph_user_fig, table_plan_output
+
+
+############# обработчик вкладки План-Факт ###############
+# @app.callback([
+#     Output("meetings_plan_fact_graph", 'figure'),
+#
+#    ],
+#
+#     [
+#         Input('select_all_regions_button_tab_plan_fact', 'n_clicks'),
+#         Input('release_all_regions_button_tab_plan_fact', 'n_clicks'),
+#         Input('region_selector_checklist_tab_plan_fact', 'value'),
+#         Input('select_all_managers_button_tab_plan_fact', 'n_clicks'),
+#         Input('release_all_managers_button_tab_plan_fact', 'n_clicks'),
+#         Input('managers_selector_checklist_tab_plan_fact', 'value'),
+#
+#
+#    ])
+# def events_distribution(select_all_regions_button_tab_plan_fact, release_all_regions_button_tab_plan_fact, region_selector_checklist_tab_plan_fact, select_all_managers_button_tab_plan_fact, release_all_managers_button_tab_plan_fact, managers_selector_checklist_tab_plan_fact):
+#     pass
+#     # return plan_fact_figure
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)
